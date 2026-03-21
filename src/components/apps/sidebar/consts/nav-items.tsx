@@ -18,9 +18,9 @@ export type NavItem = {
 
 export const mainNavItems: NavItem[] = [
   {
-    label: "Dashboard",
+    label: "Repositorie",
     icon: LayoutDashboardIcon,
-    href: routerConfig.app.Dashboard,
+    href: routerConfig.app.Repositorie,
   },
   { label: "Generate", icon: SparklesIcon, href: "/generate" },
   { label: "Post", icon: MessageCircleIcon, href: "/post" },

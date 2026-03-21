@@ -32,7 +32,7 @@ const routerConfig = routerConfigSchema.parse({
         VerifyPhone: "/verify-phone",
     },
     app: {
-        Repositorie: "/dashboard",
+        Repositorie: "/repositorie",
         Generator: "/generate",
         Posts: "/posts",
         Notifications: "/notifications",

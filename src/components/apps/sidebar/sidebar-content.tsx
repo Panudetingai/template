@@ -37,16 +37,16 @@ const sidebarItems: groupItems[] = [
     label: "Apps",
     items: [
       {
-        label: "Dashboard",
+        label: "Repositorie",
         icon: LayoutDashboardIcon,
         role: ["pro", "team", "free"],
-        href: routerConfig.app.Dashboard,
+        href: routerConfig.app.Repositorie,
       },
       {
         label: "Generate",
         icon: SparklesIcon,
         role: ["pro", "team", "free"],
-        href: routerConfig.app.Generate,
+        href: routerConfig.app.Generator,
       },
       {
         label: "Post",
