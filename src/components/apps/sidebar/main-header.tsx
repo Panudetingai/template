@@ -18,7 +18,7 @@ export default function MainHeader() {
     const segment = pathname?.split("/").filter(Boolean).pop() ?? "";
     return segment
       ? segment.charAt(0).toUpperCase() + segment.slice(1)
-      : "Dashboard";
+      : "Repositorie";
   }, [pathname]);
 
   return (
