@@ -47,8 +47,6 @@ export default function SidebarHeaderComponent() {
   }, [fetchIdentities]);
 
 
-  console.log(github)
-
   return (
     <SidebarHeader>
       <SidebarMenu>
