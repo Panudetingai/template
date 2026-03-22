@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { FacebookIcon, InstagramIcon, TwitterIcon } from "lucide-react";
-import {useGeneratorStore} from "../stores/use-generator";
+import { Platform, useGeneratorStore } from "../stores/use-generator";
 
 const platforms = [
   {
@@ -30,7 +30,7 @@ export default function SelectPlatforms() {
   const selectedPlatforms = useGeneratorStore((state) => state.selectedPlatforms);
   const setSelectedPlatforms = useGeneratorStore((state) => state.setSelectedPlatforms);
 
-  const handleSelectPlatform = (platform: string) => {
+  const handleSelectPlatform = (platform: Platform) => {
     if (selectedPlatforms.includes(platform)) {
       setSelectedPlatforms(selectedPlatforms.filter((p) => p !== platform));
     } else {
@@ -50,8 +50,8 @@ export default function SelectPlatforms() {
         {platforms.map((platform, index) => (
           <Card
             key={index}
-            className={cn("hover:bg-muted/50 transition-all duration-300 cursor-pointer", selectedPlatforms.includes(platform.value) ? "bg-muted/50 border border-primary/50" : "")}
-            onClick={() => handleSelectPlatform(platform.value)}
+            className={cn("hover:bg-muted/50 transition-all duration-300 cursor-pointer", selectedPlatforms.includes(platform.value as Platform) ? "bg-muted/50 border border-primary/50" : "")}
+            onClick={() => handleSelectPlatform(platform.value as Platform)}
           >
             <CardContent className="flex flex-col items-center justify-center h-35">
               <div className="bg-primary/10 rounded-full p-2 size-12 flex items-center justify-center mb-2">

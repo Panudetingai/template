@@ -12,7 +12,7 @@ export const repositorie = new Elysia()
     })
     .get("/:owner/:repoName/commits", async ({params}) => {
         const githubServiceInstance = await githubService();
-        const commits = await githubServiceInstance.getUserRepositoriesCommits(params.owner, params.repoName);
+        const commits = await githubServiceInstance.getUserRepositoriesCommits({owner: params.owner, repoName: params.repoName});
         return {
             commits
         }

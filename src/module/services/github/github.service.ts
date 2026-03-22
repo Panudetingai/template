@@ -6,9 +6,9 @@ import { Octokit } from "octokit";
 import { cache } from "react";
 import { githubAccessTokens } from "../../../../drizzle/schema";
 import {
-    PullRequestParameters,
-    pullRequestsFilterParameters,
-    RestEndpointMethodTypes,
+  PullRequestParameters,
+  pullRequestsFilterParameters,
+  RestEndpointMethodTypes,
 } from "../types";
 class GithubService {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -70,7 +70,7 @@ class GithubService {
    * @returns List of commits from repository
    */
   public getUserRepositoriesCommits = cache(
-    async (owner: string, repoName: string) => {
+    async ({owner, repoName}: {owner: string, repoName: string}) => {
       const providerToken = await this.getUserProviderToken();
       const commits = await providerToken.rest.repos.listCommits({
         owner: owner,
@@ -79,6 +79,16 @@ class GithubService {
       return commits.data;
     },
   );
+
+  public getCommitFiles = cache(async ({owner, repoName, commitSha}: {owner: string, repoName: string, commitSha: string}) => {
+    const providerToken = await this.getUserProviderToken();
+    const files = await providerToken.rest.repos.getCommit({
+      owner: owner,
+      repo: repoName,
+      ref: commitSha,
+    });
+    return files.data;
+  });
 
   /**
    * Get user repositories Pull Requests from github

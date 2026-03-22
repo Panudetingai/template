@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^3.0.31",
     "@elysiajs/eden": "^1.4.8",
     "@hookform/resolvers": "^5.2.2",
     "@lobehub/icons": "^5.0.1",
@@ -20,6 +21,7 @@
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
     "add": "^2.0.6",
+    "ai": "^6.0.134",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

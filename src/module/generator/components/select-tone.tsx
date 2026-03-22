@@ -3,13 +3,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
-    BookIcon,
-    BriefcaseIcon,
-    HeartIcon,
-    PaintbrushIcon,
-    SmileIcon,
+  BookIcon,
+  BriefcaseIcon,
+  HeartIcon,
+  PaintbrushIcon,
+  SmileIcon,
 } from "lucide-react";
-import { useGeneratorStore } from "../stores/use-generator";
+import { Tone, useGeneratorStore } from "../stores/use-generator";
 
 const tones = [
   {
@@ -48,7 +48,7 @@ export default function SelectTone() {
   const selectedTone = useGeneratorStore((state) => state.selectedTone);
   const setSelectedTone = useGeneratorStore((state) => state.setSelectedTone);
 
-  const handleSelectTone = (tone: string) => {
+  const handleSelectTone = (tone: Tone) => {
     if (selectedTone.includes(tone)) {
       setSelectedTone(selectedTone.filter((t) => t !== tone));
     } else {
@@ -70,11 +70,11 @@ export default function SelectTone() {
             key={tone.value}
             className={cn(
               "hover:bg-muted/50 transition-all duration-300 cursor-pointer",
-              selectedTone.includes(tone.value)
+              selectedTone.includes(tone.value as Tone)
                 ? "bg-muted/50 border border-primary/50"
                 : "",
             )}
-            onClick={() => handleSelectTone(tone.value)}
+            onClick={() => handleSelectTone(tone.value as Tone)}
           >
             <CardContent>
               <div className="flex items-center gap-4">
