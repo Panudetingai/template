@@ -49,6 +49,9 @@ export const generateRootMetadata = async (): Promise<Metadata> => {
     appleWebApp: {
       capable: true,
       statusBarStyle: "default",
+      startupImage: {
+        url: "/favicon.ico",
+      },
       title: appConfig.name,
     },
     formatDetection: {

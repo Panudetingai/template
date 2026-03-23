@@ -37,11 +37,12 @@ const auth = new Elysia()
     async ({ body }) => {
       const { provider } = body;
       const supabase = await createClient();
+      const providerScopes = provider === "github" ? "read:user read:email repo" : "email profile";
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
-          scopes: "email profile read:user read:email repo",
+          scopes: providerScopes,
         },
       });
 
