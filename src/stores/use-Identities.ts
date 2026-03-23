@@ -2,7 +2,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { UserIdentity } from "@supabase/supabase-js";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 interface IdentitiesStore {
   identities: UserIdentity[];
@@ -14,62 +13,48 @@ interface IdentitiesStore {
   resetAndRefetch: () => Promise<void>;
 }
 
-export const useIdentities = create<IdentitiesStore>()(
-  persist(
-    (set, get) => ({
-      identities: [],
-      isLoading: false,
-      hasFetched: false,
+export const useIdentities = create<IdentitiesStore>()((set, get) => ({
+  identities: [],
+  isLoading: false,
+  hasFetched: false,
 
-      setIdentities: (identities) => set({ identities }),
+  setIdentities: (identities) => set({ identities }),
 
-      fetchIdentities: async () => {
-        const { hasFetched, isLoading } = get();
+  fetchIdentities: async () => {
+    const { hasFetched, isLoading } = get();
 
-        // ✅ กันยิงซ้ำ
-        if (hasFetched || isLoading) return;
+    if (hasFetched || isLoading) return;
 
-        set({ isLoading: true });
+    set({ isLoading: true });
 
-        const supabase = createClient();
+    const supabase = createClient();
 
-        try {
-          const {
-            data: { user },
-            error,
-          } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
-          if (error || !user) {
-            console.error("Error fetching user:", error);
-            set({ isLoading: false });
-            return;
-          }
+      if (error || !user) {
+        set({ identities: [], isLoading: false, hasFetched: true });
+        return;
+      }
 
-          set({
-            identities: user.identities ?? [],
-            isLoading: false,
-            hasFetched: true,
-          });
-        } catch (err) {
-          console.error("Unexpected error:", err);
-          set({ isLoading: false });
-        }
-      },
-
-      // ✅ reset แล้ว fetch ใหม่ทันที
-      resetAndRefetch: async () => {
-        set({ hasFetched: false });
-        await get().fetchIdentities();
-      },
-    }),
-    {
-      name: "identities-storage",
-      partialize: (state) => ({
-        identities: state.identities,
-        hasFetched: state.hasFetched,
-      }),
+      set({
+        identities: user.identities ?? [],
+        isLoading: false,
+        hasFetched: true,
+      });
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      set({ isLoading: false });
     }
-  )
-);
+  },
+
+  resetAndRefetch: async () => {
+    set({ hasFetched: false });
+    await get().fetchIdentities();
+  },
+}));
 
 export default useIdentities;

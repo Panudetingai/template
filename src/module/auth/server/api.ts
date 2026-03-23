@@ -1,9 +1,14 @@
 import { db } from "@/lib/drizzle";
 import { createClient } from "@/lib/supabase/server";
+import type { UserIdentity } from "@supabase/supabase-js";
+import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
 import { cookies } from "next/headers";
 import z from "zod";
-import { githubAccessTokens, users } from "../../../../drizzle/schema";
+import {
+  githubAccessTokens,
+  users,
+} from "../../../../drizzle/schema";
 import { SignInSchema } from "../components/form/signin";
 
 const auth = new Elysia()
@@ -50,26 +55,75 @@ const auth = new Elysia()
       }),
     },
   )
-  .post('/link-provider', async ({body}) : Promise<{url: string}> => {
-    const {provider} = body
+  .post('/link-provider', async ({ body }): Promise<{ url: string }> => {
+    const { provider, next } = body;
     const supabase = await createClient();
-    const {data, error} = await supabase.auth.linkIdentity({
+    const callbackParams = new URLSearchParams({ identity: provider });
+    if (next) callbackParams.set("next", next);
+    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback?${callbackParams.toString()}`;
+    const { data, error } = await supabase.auth.linkIdentity({
       provider,
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback?identity=${provider}`,
-        scopes: 'read:user read:email repo'
-      }
+        redirectTo,
+        scopes: "read:user read:email repo",
+      },
     });
     if (error) throw new Error(error.message);
-    if (!data?.url) throw new Error('Failed to link provider');
-    return { url: data.url }
+    if (!data?.url) throw new Error("Failed to link provider");
+    return { url: data.url };
+  }, {
+    body: z.object({
+      provider: z.enum(["github"]),
+      next: z.string().optional(),
+    }),
+    response: z.object({
+      url: z.string(),
+    }),
+  })
+  .post("/unlink-provider", async ({ body }) => {
+    const { provider } = body;
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return { error: "Unauthorized", status: 401 };
+    }
+
+    const { data: identitiesData } = await supabase.auth.getUserIdentities();
+    const identities = identitiesData?.identities ?? [];
+    if (identities.length < 2) {
+      return {
+        error: "Cannot unlink. You need at least one other sign-in method.",
+        status: 400,
+      };
+    }
+
+    const identity = identities.find((i: UserIdentity) => i.provider === provider);
+    if (!identity) {
+      return { error: "Identity not found", status: 404 };
+    }
+
+    const { error: unlinkError } = await supabase.auth.unlinkIdentity(identity);
+    if (unlinkError) {
+      return { error: unlinkError.message, status: 400 };
+    }
+
+    if (provider === "github") {
+      await db
+        .delete(githubAccessTokens)
+        .where(eq(githubAccessTokens.userId, user.id));
+      const cookieStore = await cookies();
+      cookieStore.delete("github_access_token");
+    }
+
+    return { success: true };
   }, {
     body: z.object({
       provider: z.enum(["github"]),
     }),
-    response: z.object({
-      url: z.string(),
-    })
   })
   // callback provider
   .get("/callback", async ({ request, redirect }) => {
@@ -78,52 +132,105 @@ const auth = new Elysia()
     const code = searchParams.get("code");
     const identity = searchParams.get("identity");
     const callbackError = searchParams.get("error");
-    const callbackErrorDescription = searchParams.get("error_code");
-    
+    const callbackErrorCode = searchParams.get("error_code");
+    const callbackErrorDescription = searchParams.get("error_description");
+    const rawNext = searchParams.get("next");
+    const nextPath =
+      rawNext && rawNext.startsWith("/") ? rawNext : "/";
+
+    const AUTH_ERROR_MESSAGES: Record<string, string> = {
+      identity_already_exists:
+        "บัญชี GitHub นี้เชื่อมโยงกับผู้ใช้อื่นอยู่แล้ว กรุณาใช้บัญชีอื่นหรือล็อกอินด้วยบัญชีที่มีอยู่",
+      server_error: "เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ กรุณาลองอีกครั้ง",
+      access_denied: "คุณได้ยกเลิกการเชื่อมต่อบัญชี",
+    };
+
     if (callbackError) {
-      if (callbackErrorDescription === 'identity_already_exists') {
-        return redirect(`${origin}?link-provider-error=${callbackErrorDescription}`, 302);
-      } else {
-        return redirect(`${origin}/`, 302);
-      }
+      const errorCode = callbackErrorCode ?? callbackError;
+      const userMessage =
+        AUTH_ERROR_MESSAGES[errorCode] ??
+        AUTH_ERROR_MESSAGES[callbackError] ??
+        callbackErrorDescription ??
+        "เกิดข้อผิดพลาดในการเชื่อมต่อบัญชี กรุณาลองอีกครั้ง";
+      const errorParams = new URLSearchParams({
+        "auth-error": errorCode,
+        "auth-error-message": userMessage,
+      });
+      const separator = nextPath.includes("?") ? "&" : "?";
+      return redirect(
+        `${origin}${nextPath}${separator}${errorParams.toString()}`,
+        302,
+      );
     }
     
     
     if (!code) throw new Error("Invalid code");
-    if (identity && identity === 'github') {
-      const {data, error} = await supabase.auth.exchangeCodeForSession(code);
+    if (identity && identity === "github") {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) {
         return {
           error: error.message,
           status: 400,
-        }
+        };
       }
 
-      // set github access token to cookies
-      const cookiesoptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24 * 30,
-        path: '/',
-      };
-      
-      // provider token to database
-      await db.insert(githubAccessTokens).values({
-        userId: data.user.id!,
-        providerToken: data.session.access_token,
-        expiresAt: new Date(data.session.expires_at!).toISOString(),
-        owner: data.session.user.user_metadata.name!,
-      }).onConflictDoUpdate({
-        target: [githubAccessTokens.userId],
-        set: {
-          providerToken: data.session.access_token,
+      const githubIdentity = data.user.identities?.find(
+        (i: UserIdentity) => i.provider === "github",
+      );
+      const owner =
+        (githubIdentity?.identity_data as { user_name?: string })?.user_name ??
+        (githubIdentity?.identity_data as { login?: string })?.login ??
+        data.user.user_metadata?.name ??
+        "";
+
+      await db
+        .insert(users)
+        .values({
+          id: data.user.id!,
+          username: data.user.user_metadata?.username ?? undefined,
+          email: data.user.email!,
+          free: "free" as const,
+          avatarUrl: data.user.user_metadata?.avatar_url,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .onConflictDoUpdate({
+          target: [users.id],
+          set: {
+            username: data.user.user_metadata?.username,
+            email: data.user.email!,
+            avatarUrl: data.user.user_metadata?.avatar_url,
+            updatedAt: new Date().toISOString(),
+          },
+        });
+
+      const providerToken = data.session.provider_token ?? data.session.access_token;
+      await db
+        .insert(githubAccessTokens)
+        .values({
+          userId: data.user.id!,
+          providerToken,
           expiresAt: new Date(data.session.expires_at!).toISOString(),
-          owner: data.session.user.user_metadata.name!,
-        },
-      });
+          owner,
+        })
+        .onConflictDoUpdate({
+          target: [githubAccessTokens.userId],
+          set: {
+            providerToken,
+            expiresAt: new Date(data.session.expires_at!).toISOString(),
+            owner,
+          },
+        });
+
+      const cookiesOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 30,
+        path: "/",
+      };
       const cookieStore = await cookies();
-      cookieStore.set('github_access_token', data.session.access_token, cookiesoptions);
-      return redirect(`${origin}/`, 302);
+      cookieStore.set("github_access_token", data.session.access_token, cookiesOptions);
+      return redirect(`${origin}${nextPath}`, 302);
     }
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) throw new Error(error.message);

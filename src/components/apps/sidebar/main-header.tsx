@@ -4,25 +4,16 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { SidebarTrigger } from "../../animate-ui/components/radix/sidebar";
 import UserMenu from "./user-menu";
 
 export default function MainHeader() {
   const isMobile = useIsMobile();
-  const pathname = usePathname();
-
-  const pageTitle = useMemo(() => {
-    const segment = pathname?.split("/").filter(Boolean).pop() ?? "";
-    return segment
-      ? segment.charAt(0).toUpperCase() + segment.slice(1)
-      : "Repositorie";
-  }, [pathname]);
 
   return (
     <div className="flex w-full items-center justify-between gap-4">
-      {isMobile && <SidebarTrigger />}
+      <SidebarTrigger />
       <div className="flex items-center gap-2">
         <ToggleMode />
         {isMobile && <UserMenu variant="compact" />}

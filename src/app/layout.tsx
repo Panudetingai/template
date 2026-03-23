@@ -1,3 +1,5 @@
+import { AuthErrorHandler } from "@/components/auth-error-handler";
+import { Toaster } from "@/components/ui/sonner";
 import { generateRootMetadata } from "@/configs/meta.config";
 import QueryProvider from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
@@ -23,7 +25,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            {children}
+            <AuthErrorHandler />
+            <Toaster position="top-right" richColors />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
