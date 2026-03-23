@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 import useUsers from "@/lib/supabase/hooks/use-users";
 import { useMutation } from "@tanstack/react-query";
 import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   SidebarFooter,
   SidebarMenuButton,
@@ -47,6 +48,7 @@ const menuItems = [
 
 export default function SidebarFooterComponent() {
   const isMobile = useIsMobile();
+  const router = useRouter();
   const { user_metadata, isLoading } = useUsers();
 
   const { mutate: handleLogout, isPending } = useMutation({
@@ -56,10 +58,9 @@ export default function SidebarFooterComponent() {
       if (error) {
         throw new Error(error.message);
       }
-      window.location.reload();
+      router.refresh();
     },
   });
-  console.log(isLoading)
   return (
     <SidebarFooter>
       <SidebarMenuItem>

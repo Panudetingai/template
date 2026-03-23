@@ -23,7 +23,9 @@ import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Github, Google } from "@lobehub/icons";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 export const SignInSchema = z.object({
@@ -43,6 +45,7 @@ export const SignInSchema = z.object({
 export type SignInSchemaType = z.infer<typeof SignInSchema>;
 
 export default function SignInForm() {
+  const router = useRouter();
   const form = useForm<SignInSchemaType>({
     resolver: zodResolver(SignInSchema),
     defaultValues: {
@@ -60,13 +63,15 @@ export default function SignInForm() {
         });
         return;
       }
-      window.location.href = response.data.url;
+      router.push(response.data.url);
       return;
     },
   });
 
   const onSubmit = form.handleSubmit(async (data) => {
-    console.log(data)
+    toast.warning("Coming soon to use email and password to sign in", {
+      description: `We are working on it ${data.email} ${data.password}`,
+    });
   });
 
   return (
@@ -89,6 +94,7 @@ export default function SignInForm() {
                   <FieldLabel>Email</FieldLabel>
                   <FieldContent>
                     <Input
+                     disabled
                       {...field}
                       placeholder="example@example.com"
                       type="email"

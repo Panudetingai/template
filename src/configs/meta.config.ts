@@ -17,6 +17,7 @@ export const generateRootMetadata = async (): Promise<Metadata> => {
     description: appConfig.description,
     metadataBase: new URL(appConfig.url),
     applicationName: appConfig.name,
+    manifest: "/manifest.json",
     keywords: [
       "Next.js",
       "React",
@@ -44,6 +45,14 @@ export const generateRootMetadata = async (): Promise<Metadata> => {
       icon: {
         url: "/favicon.ico",
       },
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: appConfig.name,
+    },
+    formatDetection: {
+      telephone: false,
     },
   };
 };

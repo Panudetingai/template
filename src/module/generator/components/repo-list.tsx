@@ -36,7 +36,7 @@ export default function RepoList() {
 
   const handleSelectRepository = (repository: { repositoryName: string; repositoryOwner: string; }) => {
     setSelectedRepository(repository);
-    setStep(3);
+    setStep(3, "select repository");
   };
 
   return (

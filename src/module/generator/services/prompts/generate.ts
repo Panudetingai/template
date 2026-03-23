@@ -1,40 +1,77 @@
 export type generatePostsPromptParams = {
-    platforms: string;
-    tones: string[];
-    files: string[];
-    commitMessages: string[];
-    commitsContext: string; // ข้อมูลไฟล์ที่แก้, patch, status
-    changeLogContext?: string; // คำอธิบาย commit message
-    commitsStatus?: string; // สรุปจำนวนการเพิ่ม/ลบ code
-}
+  platforms: string; // "twitter" | "instagram" | "facebook" | "twitter,instagram,facebook"
+  tones: string[]; // ["casual", "inspiring", "technical"]
+  files: string[]; // ไฟล์ที่แก้ไข
+  commitMessages: string[]; // commit message จริงๆ
+  commitsContext: string; // diff/patch ของโค้ด
+  changeLogContext?: string; // คำอธิบาย commit เพิ่มเติม (ถ้ามี)
+  commitsStatus?: string; // สรุปจำนวน +/- lines
+};
 
 export const generatePostsPrompt = (params: generatePostsPromptParams) => {
-    return `
-You are an expert Technical Content Creator and Senior Software Engineer. Your task is to transform technical git commit data into engaging social media posts for ${params.platforms}.
+  const requestedPlatforms = params.platforms
+    .split(",")
+    .map((p) => p.trim().toLowerCase());
 
-### CONTEXT DATA
-- **Project Change Summary:** ${params.commitsStatus || "N/A"}
-- **Commit Messages/Changelog:** ${params.commitMessages.join("\n\n") || "No description provided"}
-- **Technical Diffs (Files & Patches):**
+  const platformInstructions: Record<string, string> = {
+    twitter: `- Max 280 characters (strict)
+- One clear idea, punchy and real
+- Voice: like a quick tweet mid-session — raw, not polished
+- 1–2 emoji only if it fits naturally
+- End with a hook: question, observation, or mic-drop
+- No hashtags`,
+
+    instagram: `- 6–12 lines with line breaks for breathing room
+- Emotional arc: stuck → tried → fixed → relief
+- Voice: dev diary — warm, personal, story-like
+- Strong opening line (no "วันนี้ผมจะ..." or "Let me share...")
+- 4–6 hashtags on last line (mix: #coding + #nextjs #buildinpublic)`,
+
+    facebook: `- 4–7 lines, conversational
+- Voice: telling a friend over coffee — relaxed, genuine
+- Slightly longer than Twitter, never essay-like
+- Optional: end with question to spark comments
+- 0–2 hashtags or none`,
+  };
+
+  const activePlatformRules = requestedPlatforms
+    .filter((p) => platformInstructions[p])
+    .map((p) => `**${p.toUpperCase()}**: ${platformInstructions[p]}`)
+    .join("\n\n");
+
+  const platformLabel =
+    requestedPlatforms.length === 1
+      ? requestedPlatforms[0].toUpperCase()
+      : requestedPlatforms.map((p) => p.toUpperCase()).join(" / ");
+
+  return `You write social posts for developers who build in public. One post per platform. Share the vibe of the work — not a tutorial.
+
+## CONTEXT
+
+**Commits:** ${params.commitMessages.join(" | ")}
+**Extra:** ${params.changeLogContext || "—"}
+**Stats:** ${params.commitsStatus || "—"}
+**Files:** ${params.files.join(", ") || "—"}
+**Diff (may be truncated):**
+\`\`\`
 ${params.commitsContext}
+\`\`\`
 
-### INSTRUCTIONS
-1. **Analyze the Intent:** Don't just list changed files. Look at the diffs to understand *why* the changes were made. 
-   - *Example:* If you see "added [id]/page.tsx" and "deleted components from page.tsx", identify it as "Refactoring for Reusability" or "Enabling Dynamic Routing".
-2. **Identify the Value:** How does this benefit the user or the developer? (e.g., faster performance, cleaner code, new feature).
-3. **Tone & Style:** Use a ${params.tones.join(", ")} tone.
-4. **Platform Optimization:** Format the output specifically for ${params.platforms} (use hashtags, emojis, and appropriate line breaks).
+## RULES
 
-### OUTPUT STRUCTURE (Generate one post per platform)
-- **Catchy Headline:** (Hook the reader with the main achievement)
-- **The "What & Why":** (Explain the technical change in an easy-to-understand way)
-- **Technical Highlight:** (Mention specific tech like Next.js, TypeScript, or Refactoring patterns found in the diff)
-- **Closing & Hashtags**
+**Language:** Match commit language (Thai commits → Thai post; English → English). Natural mix OK ("fix แล้ว", "ลื่นมาก").
 
-### CONSTRAINT
-- If the code removes many lines and adds a single component, emphasize "Code Cleanliness" and "Abstractions".
-- Keep the explanation technically accurate but accessible.
+**Tone:** ${params.tones.join(", ")}
 
-Response:
-`;
-}
+**Write from:** What changed and why it matters — not file names or code. Feel the pain → fix → relief.
+
+**Avoid:** Code snippets, filenames, bullet points, "วันนี้ผมจะมาแนะนำ", "Let me walk you through", doc/marketing tone. No tool names unless they're the story ("switched to Bun").
+
+## PLATFORM — ${platformLabel}
+
+${activePlatformRules}
+
+## OUTPUT
+
+Return ONLY the post text. No labels, no prefixes, no explanation. Just the post content.`;
+};

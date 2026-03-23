@@ -37,3 +37,7 @@ export default function RootLayout({
 }
 
 export const generateMetadata = generateRootMetadata;
+
+export const viewport = {
+  themeColor: "#8936FF",
+};

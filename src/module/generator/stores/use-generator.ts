@@ -73,12 +73,14 @@ const useGeneratorStore = create<GeneratorStore>((set) => ({
 
 interface GeneratorStep {
   step: number;
-  setStep: (step: number) => void;
+  stepPage: string;
+  setStep: (step: number, stepPage: string) => void;
 }
 
 const useGeneratorStepStore = create<GeneratorStep>((set) => ({
   step: 1,
-  setStep: (step) => set({ step }),
+  stepPage: "",
+  setStep: (step, stepPage) => set({ step, stepPage }),
 }));
 
 export { useGeneratorStepStore, useGeneratorStore };

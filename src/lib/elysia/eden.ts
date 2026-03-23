@@ -1,5 +1,5 @@
-import { app } from "@/app/api/[[...slugs]]/route";
 import { treaty } from "@elysiajs/eden";
+import { app } from "./app";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL!;
 

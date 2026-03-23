@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   useGeneratorStepStore,
   useGeneratorStore,
@@ -16,9 +17,27 @@ import SelectPlatforms from "./select-platforms";
 import SelectTone from "./select-tone";
 
 export default function GeneratorLayout() {
+  const router = useRouter();
+  const stepPage = useGeneratorStepStore((state) => state.stepPage);
   const step = useGeneratorStepStore((state) => state.step);
+  const setStep = useGeneratorStepStore((state) => state.setStep);
+  const backStepPage = () => {
+    if (step === 1) {
+      router.back();
+    } else {
+      setStep(step - 1, stepPage);
+    }
+  }
   return (
     <div className="flex flex-col gap-4">
+      {step > 1 && (
+        <div>
+          <Button variant={"link"} className="px-0!" onClick={backStepPage}>
+            <ArrowLeftIcon className="size-4" />
+            Back to {stepPage.charAt(0).toUpperCase() + stepPage.slice(1)}
+          </Button>
+        </div>
+      )}
       {step === 1 && <GeneratorSelectPlatformsandTone />}
       {step === 2 && <GeneratorSelectRepository />}
       {step === 3 && <GenerateSelectCommit />}
@@ -60,7 +79,7 @@ export function GeneratorSelectPlatformsandTone() {
         <Button
           className="w-full"
           size={"lg"}
-          onClick={() => setStep(2)}
+          onClick={() => setStep(2, "select platform and tone")}
           disabled={selectedPlatforms.length === 0 || selectedTone.length === 0}
         >
           Continue to Select Repository <ArrowRightIcon className="size-4" />

@@ -41,7 +41,7 @@ const auth = new Elysia()
         provider,
         options: {
           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
-          scopes: "email profile",
+          scopes: "email profile read:user read:email repo",
         },
       });
 
@@ -236,6 +236,27 @@ const auth = new Elysia()
     if (error) throw new Error(error.message);
     let next = searchParams.get("next");
     if (!next) next = "/";
+
+    // check if provider is github 
+    const providerToken = data.session.provider_token?.includes('gho_') && data.session.provider_token;
+    if (providerToken) {
+      await db
+        .insert(githubAccessTokens)
+        .values({
+          userId: data.user.id!,
+          providerToken,
+          expiresAt: new Date(data.session.expires_at!).toISOString(),
+          owner: data.user.user_metadata.user_name ?? undefined,
+        }).onConflictDoUpdate({
+          target: [githubAccessTokens.userId],
+          set: {
+            providerToken,
+            expiresAt: new Date(data.session.expires_at!).toISOString(),
+            owner: data.user.user_metadata.user_name ?? undefined,
+          },
+        });
+    }
+
     // insert user to database
     await db
       .insert(users)
@@ -249,7 +270,7 @@ const auth = new Elysia()
         updatedAt: new Date().toISOString(),
       })
       .onConflictDoUpdate({
-        target: [users.id],
+        target: [users.id, users.email],
         set: {
           username: data.user.user_metadata.username,
           email: data.user.user_metadata.email!,

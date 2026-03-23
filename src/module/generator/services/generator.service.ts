@@ -29,36 +29,33 @@ class GeneratorService {
     const files = commitsContext.files?.map((file) => file.filename) ?? [];
     const patches = commitsContext.files?.map((file) => file.patch).join("\n") ?? "";
 
-    console.log(JSON.stringify(
-      {
-        platforms: request.platforms,
-        tones: request.tones,
-        files: commitsContext,
-        commitMessages: request.commit.map((commit) => commit.commitMessage),
-      },
-      null,
-      2,
-    ))
-
     const posts: GeneratedPostResponse[] = [];
     for (const platform of request.platforms) {
-      const prompt = generatePostsPrompt({
-        platforms: platform.toString(),
-        tones: request.tones,
-        commitsContext: summarizePatches(patches ?? ""),
-        commitMessages: request.commit.map((commit) => commit.commitMessage),
-        files: files,
-      });
-      const result = await generateText({
-        model: model.languageModel("openai/gpt-oss-120b"),
-        prompt,
-        output: Output.text(),
-        maxOutputTokens: 1000,
-      });
-      posts.push({
-        platform: platform,
-        content: result.output,
-      });
+      try {
+        const prompt = generatePostsPrompt({
+          platforms: platform.toString(),
+          tones: request.tones,
+          commitsContext: summarizePatches(patches ?? ""),
+          commitMessages: request.commit.map((commit) => commit.commitMessage),
+          files: files,
+        });
+        const result = await generateText({
+          model: model.languageModel("openai/gpt-oss-120b"),
+          prompt,
+          output: Output.text(),
+          maxOutputTokens: 1000,
+        });
+        posts.push({
+          platform: platform,
+          content: result.output,
+        });
+      } catch (error) {
+        console.error(error);
+        posts.push({
+          platform: platform,
+          content: "Error generating post",
+        });
+      }
     }
     return posts;
   }

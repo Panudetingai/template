@@ -72,7 +72,7 @@ export default function CommitList() {
           }
         }
         setPosts(posts);
-        setStep(4);
+        setStep(4, "select commits");
         return response.data;
       },
     });
