@@ -14,7 +14,7 @@ export const generatePostsPrompt = (params: generatePostsPromptParams) => {
     .map((p) => p.trim().toLowerCase());
 
   const platformInstructions: Record<string, string> = {
-    twitter: `- Max 280 characters (strict)
+    twitter: `
 - One clear idea, punchy and real
 - Voice: like a quick tweet mid-session — raw, not polished
 - 1–2 emoji only if it fits naturally
@@ -71,7 +71,6 @@ ${params.commitsContext}
 
 ${activePlatformRules}
 
-## OUTPUT
-
-Return ONLY the post text. No labels, no prefixes, no explanation. Just the post content.`;
+Return.
+`
 };
