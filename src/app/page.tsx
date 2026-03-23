@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col max-w-3xl mx-auto justify-center h-screen">
+    <div className="flex flex-col max-w-3xl mx-auto max-sm:mx-4 justify-center h-screen">
       <div className="flex items-start gap-6">
         <Image src={"/favicon.ico"} alt="Dayily Logo" width={60} height={60} />
         <div className="flex flex-col gap-2">

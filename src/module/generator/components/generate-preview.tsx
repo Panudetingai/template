@@ -1,11 +1,11 @@
 "use client";
 
 import {
-    Tabs,
-    TabsContent,
-    TabsContents,
-    TabsList,
-    TabsTrigger,
+  Tabs,
+  TabsContent,
+  TabsContents,
+  TabsList,
+  TabsTrigger,
 } from "@/components/animate-ui/components/animate/tabs";
 import StreamingResponse from "@/components/streaming";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,9 @@ import { Loader } from "@/components/ui/loader";
 import { useTextStream } from "@/components/ui/response-stream";
 import { api } from "@/lib/elysia/eden-client";
 import { useMutation } from "@tanstack/react-query";
-import { CopyIcon, Sparkles } from "lucide-react";
+import { CheckIcon, CopyIcon, Sparkles } from "lucide-react";
 import { markdownToTxt } from "markdown-to-txt";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatMarkdown } from "../services/lib/formatterMarkdown";
 import { Platform, useGeneratorStore } from "../stores/use-generator";
 import { PreviewPosts, usePreviewStore } from "../stores/use-preview";
@@ -27,14 +27,21 @@ function CopyButton({
   posts: PreviewPosts;
   activeValue: Platform;
 }) {
-  const handleCopy = () => {
+  const [isCopied, setIsCopied] = useState(false);
+  const handleCopy = useCallback(() => {
     const content = posts[activeValue]?.content ?? "";
     navigator.clipboard.writeText(markdownToTxt(content));
-  };
+    setIsCopied(true);
+  }, [posts, activeValue]);
+
+  useEffect(() => {
+    navigator.clipboard.readText().then((text) => setIsCopied(text === posts[activeValue]?.content));
+  }, [posts, activeValue]);
+  
   return (
     <Button variant="outline" size="sm" onClick={handleCopy}>
-      Copy
-      <CopyIcon className="size-4" />
+      {isCopied ? "Copied" : "Copy"}
+      {isCopied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
     </Button>
   );
 }

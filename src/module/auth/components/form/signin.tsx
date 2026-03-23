@@ -94,7 +94,6 @@ export default function SignInForm() {
                   <FieldLabel>Email</FieldLabel>
                   <FieldContent>
                     <Input
-                     disabled
                       {...field}
                       placeholder="example@example.com"
                       type="email"
