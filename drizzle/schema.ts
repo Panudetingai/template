@@ -154,6 +154,8 @@ export const githubAccessTokens = pgTable("github_access_tokens", {
 			name: "github_access_tokens_user_id_users_id_fk"
 		}),
 	pgPolicy("policy_Select_Github_Access_Tokens", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Github_Access_Tokens", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Github_Access_Tokens", { as: "permissive", for: "update", to: ["public"] }),
 ]);
 
 export const users = pgTable("users", {

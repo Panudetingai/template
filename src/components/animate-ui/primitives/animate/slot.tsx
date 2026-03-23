@@ -1,8 +1,8 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { isMotionComponent, motion, type HTMLMotionProps } from 'motion/react';
 import * as React from 'react';
+import { motion, isMotionComponent, type HTMLMotionProps } from 'motion/react';
+import { cn } from '@/lib/utils';
 
 type AnyProps = Record<string, unknown>;
 
@@ -88,7 +88,9 @@ function Slot<T extends HTMLElement = HTMLElement>({
 }
 
 export {
-  Slot, type AnyProps, type DOMMotionProps, type SlotProps,
-  type WithAsChild
+  Slot,
+  type SlotProps,
+  type WithAsChild,
+  type DOMMotionProps,
+  type AnyProps,
 };
-

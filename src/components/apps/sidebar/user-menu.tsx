@@ -13,19 +13,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { createClient } from "@/lib/supabase/client";
 import useUsers from "@/lib/supabase/hooks/use-users";
 import { BadgeCheck, Bell, CreditCard, Github, LogOut, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { handleLinkProvider } from "./handles/linkprovider";
 
 function ConnectGitHubItem() {
-  const handleConnect = () => {
-    window.location.href = '/api/auth/link-provider?provider=github';
+  const handleConnect = async () => {
+    await handleLinkProvider("github");
   };
 
   return (
     <DropdownMenuItem onClick={handleConnect}>
       <Github className="size-4" />
-      Connect GitHub (for commits)
+      Connect GitHub
     </DropdownMenuItem>
   );
 }
@@ -42,10 +44,17 @@ type UserMenuProps = {
 };
 
 export default function UserMenu({ variant = "sidebar" }: UserMenuProps) {
+  const supabase = createClient();
   const { user_metadata, isLoading } = useUsers();
   const isMobile = useIsMobile();
 
   if (!user_metadata || isLoading) return isLoading ? <Spinner className="size-6" /> : null;
+
+  const handleLogout = () => {
+    supabase.auth.signOut().then(() => {
+      window.location.reload();
+    });
+  };
 
   const trigger =
     variant === "compact" ? (
@@ -112,9 +121,7 @@ export default function UserMenu({ variant = "sidebar" }: UserMenuProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="flex cursor-pointer items-center gap-2"
-          onClick={() => {
-            window.location.href = "/api/auth/logout";
-          }}
+          onClick={handleLogout}
         >
           <LogOut />
           Log out

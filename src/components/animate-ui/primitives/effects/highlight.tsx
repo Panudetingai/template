@@ -1,7 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion, type Transition } from 'motion/react';
 import * as React from 'react';
+import { AnimatePresence, motion, type Transition } from 'motion/react';
 
 import { cn } from '@/lib/utils';
 
@@ -129,7 +129,7 @@ function Highlight<T extends React.ElementType = 'div'>({
     onValueChange,
     className,
     style,
-    transition = { type: 'spring', stiffness: 400, damping: 45 },
+    transition = { type: 'spring', stiffness: 350, damping: 35 },
     hover = false,
     click = true,
     enabled = true,
@@ -287,12 +287,7 @@ function Highlight<T extends React.ElementType = 'div'>({
                   },
                 }}
                 transition={transition}
-                style={{
-                  position: 'absolute',
-                  zIndex: 0,
-                  backfaceVisibility: 'hidden' as const,
-                  ...style,
-                }}
+                style={{ position: 'absolute', zIndex: 0, ...style }}
                 className={cn(className, activeClassNameState)}
               />
             )}
@@ -639,6 +634,7 @@ function HighlightItem<T extends React.ElementType>({
 export {
   Highlight,
   HighlightItem,
-  useHighlight, type HighlightItemProps, type HighlightProps
+  useHighlight,
+  type HighlightProps,
+  type HighlightItemProps,
 };
-

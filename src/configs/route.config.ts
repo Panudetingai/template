@@ -33,7 +33,7 @@ const routerConfig = routerConfigSchema.parse({
     },
     app: {
         Repositorie: "/repositorie",
-        Generator: "/generate",
+        Generator: "/generator",
         Posts: "/posts",
         Notifications: "/notifications",
         Integrations: "/integrations",

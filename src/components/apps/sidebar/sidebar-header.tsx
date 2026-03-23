@@ -1,6 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { api } from "@/lib/elysia/eden-client";
 import useIdentities from "@/stores/use-Identities";
 import { Github } from "@lobehub/icons";
 import Image from "next/image";
@@ -11,16 +10,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "../../animate-ui/components/radix/sidebar";
+import { handleLinkProvider } from "./handles/linkprovider";
 
 export default function SidebarHeaderComponent() {
-  const handleLinkProvider = async () => {
-    const response = await api.auth["link-provider"].post({
-      provider: 'github'
-    });
-    if (response.error) {
-      return;
-    }
-    window.location.href = response.data.url;
+  const handleLinkProviderGithub = async () => {
+    await handleLinkProvider("github");
   };
 
   
@@ -46,8 +40,6 @@ export default function SidebarHeaderComponent() {
     fetchIdentities();
   }, [fetchIdentities]);
 
-
-  console.log(github)
 
   return (
     <SidebarHeader>
@@ -94,7 +86,7 @@ export default function SidebarHeaderComponent() {
                 <SidebarMenuButton
                   size={"lg"}
                   className="shadow cursor-pointer"
-                  onClick={handleLinkProvider}
+                  onClick={handleLinkProviderGithub}
                 >
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
                     <Github.Avatar size={24} />
