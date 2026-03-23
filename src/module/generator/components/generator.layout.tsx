@@ -27,7 +27,7 @@ export default function GeneratorLayout() {
     } else {
       setStep(step - 1, stepPage);
     }
-  }
+  };
   return (
     <div className="flex flex-col gap-4">
       {step > 1 && (
@@ -49,6 +49,7 @@ export default function GeneratorLayout() {
 export function GeneratorSelectPlatformsandTone() {
   const { selectedPlatforms, selectedTone } = useGeneratorStore();
   const setStep = useGeneratorStepStore((state) => state.setStep);
+  
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -80,7 +81,8 @@ export function GeneratorSelectPlatformsandTone() {
           className="w-full"
           size={"lg"}
           onClick={() => setStep(2, "select platform and tone")}
-          disabled={selectedPlatforms.length === 0 || selectedTone.length === 0}
+          suppressHydrationWarning
+          disabled={(selectedPlatforms.length === 0 || selectedTone.length === 0)}
         >
           Continue to Select Repository <ArrowRightIcon className="size-4" />
         </Button>
@@ -139,12 +141,17 @@ export function GeneratorSelectRepository() {
   );
 }
 export function GenerateSelectCommit() {
-  const selectedRepository = useGeneratorStore((state) => state.selectedRepository);
+  const selectedRepository = useGeneratorStore(
+    (state) => state.selectedRepository,
+  );
   return (
     <motion.div>
       <div className="flex flex-col gap-4">
         <div className="space-y-2">
-          <h1 className="text-lg font-semibold">Select Commit for {selectedRepository.repositoryName} by {selectedRepository.repositoryOwner}</h1>
+          <h1 className="text-lg font-semibold">
+            Select Commit for {selectedRepository.repositoryName} by{" "}
+            {selectedRepository.repositoryOwner}
+          </h1>
           <p className="text-muted-foreground text-sm">
             Select one or more commits (click again to deselect)
           </p>
@@ -152,5 +159,5 @@ export function GenerateSelectCommit() {
         <CommitList />
       </div>
     </motion.div>
-  )
+  );
 }
