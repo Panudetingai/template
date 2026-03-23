@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { SidebarTrigger } from "../../animate-ui/components/radix/sidebar";
@@ -23,19 +22,7 @@ export default function MainHeader() {
 
   return (
     <div className="flex w-full items-center justify-between gap-4">
-      {isMobile && (
-        <div className="flex items-center gap-2">
-          <Image
-            src="/icons/favicon.svg"
-            alt="Dayily"
-            width={100}
-            height={100}
-            className="size-10 rounded-lg"
-          />
-          <h1 className="text-2xl font-semibold">{pageTitle}</h1>
-        </div>
-      )}
-      {!isMobile && <SidebarTrigger />}
+      {isMobile && <SidebarTrigger />}
       <div className="flex items-center gap-2">
         <ToggleMode />
         {isMobile && <UserMenu variant="compact" />}

@@ -74,7 +74,7 @@ export default function ListRepositories() {
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground line-clamp-2">
                 {repository.description}
               </p>
             </CardContent>
@@ -111,7 +111,6 @@ export default function ListRepositories() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Updated{" "}
                 {formatDistanceToNow(new Date(repository.updated_at ?? ""), {
                   addSuffix: true,
                 })}

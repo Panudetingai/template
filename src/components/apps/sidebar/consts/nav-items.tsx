@@ -22,7 +22,7 @@ export const mainNavItems: NavItem[] = [
     icon: LayoutDashboardIcon,
     href: routerConfig.app.Repositorie,
   },
-  { label: "Generate", icon: SparklesIcon, href: "/generate" },
+  { label: "Generate", icon: SparklesIcon, href: "/generator" },
   { label: "Post", icon: MessageCircleIcon, href: "/post" },
   {
     label: "Settings",

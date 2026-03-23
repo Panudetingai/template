@@ -64,12 +64,12 @@ export default function SelectTone() {
           Select the tone you want to generate posts for
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-4 justify-center items-center">
+      <div className="grid lg:grid-cols-3 gap-4 justify-center items-center max-sm:grid-cols-1">
         {tones.map((tone) => (
           <Card
             key={tone.value}
             className={cn(
-              "hover:bg-muted/50 transition-all duration-300 cursor-pointer",
+              "hover:bg-muted/50 transition-all duration-300 cursor-pointer max-sm:w-full",
               selectedTone.includes(tone.value as Tone)
                 ? "bg-muted/50 border border-primary/50"
                 : "",

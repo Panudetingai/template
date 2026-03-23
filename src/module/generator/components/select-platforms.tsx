@@ -53,7 +53,7 @@ export default function SelectPlatforms() {
             className={cn("hover:bg-muted/50 transition-all duration-300 cursor-pointer", selectedPlatforms.includes(platform.value as Platform) ? "bg-muted/50 border border-primary/50" : "")}
             onClick={() => handleSelectPlatform(platform.value as Platform)}
           >
-            <CardContent className="flex flex-col items-center justify-center h-35">
+            <CardContent className="flex flex-col items-center justify-center h-35 max-sm:p-2!">
               <div className="bg-primary/10 rounded-full p-2 size-12 flex items-center justify-center mb-2">
                 <platform.icon className="size-6 text-primary" />
               </div>
