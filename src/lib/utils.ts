@@ -42,3 +42,9 @@ export function colorLanguage(language: string | null) {
   }
   return "bg-gray-500";
 }
+
+export function normalizeMarkdown(markdown: string) {
+  return markdown
+    .replace(/\\n/g, "\n")   // แปลงให้เป็น newline จริง
+    .replace(/\n/g, "\n\n"); // ทำให้ Markdown ขึ้นบรรทัด
+}

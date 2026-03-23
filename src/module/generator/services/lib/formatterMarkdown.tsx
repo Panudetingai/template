@@ -1,7 +1,21 @@
-export function formatForSocial(text: string) {
-    return text
-      .replace(/\*\*/g, "")        // ลบ bold markdown
-      .replace(/###\s/g, "")       // ลบ heading
-      .replace(/-\s/g, "• ")       // เปลี่ยน list
-      .replace(/\n{3,}/g, "\n\n"); // fix spacing
-  }
+export function formatMarkdown(text: string) {
+  return text
+    // เส้นคั่น
+    .replace(/\s---\s/g, "\n\n---\n\n")
+
+    // headings
+    .replace(/\s###\s/g, "\n\n### ")
+    .replace(/\s##\s/g, "\n\n## ")
+
+    // bullet list
+    .replace(/\s\*\s/g, "\n* ")
+
+    // bold block (กันมันชนกัน)
+    .replace(/\*\*/g, "\n**")
+
+    .replace(/\*\*(.*?)\s+\*\*/g, "**$1**")
+
+    // cleanup (กันบรรทัดเกิน)
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}

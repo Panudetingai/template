@@ -10,6 +10,7 @@ import {
   useGeneratorStore,
 } from "../stores/use-generator";
 import CommitList from "./commit-list";
+import GeneratePreview from "./generate-preview";
 import RepoList from "./repo-list";
 import SelectPlatforms from "./select-platforms";
 import SelectTone from "./select-tone";
@@ -21,6 +22,7 @@ export default function GeneratorLayout() {
       {step === 1 && <GeneratorSelectPlatformsandTone />}
       {step === 2 && <GeneratorSelectRepository />}
       {step === 3 && <GenerateSelectCommit />}
+      {step === 4 && <GeneratePreview />}
     </div>
   );
 }

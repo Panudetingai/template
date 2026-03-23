@@ -1,6 +1,8 @@
 export type generatePostsPromptParams = {
     platforms: string;
     tones: string[];
+    files: string[];
+    commitMessages: string[];
     commitsContext: string; // ข้อมูลไฟล์ที่แก้, patch, status
     changeLogContext?: string; // คำอธิบาย commit message
     commitsStatus?: string; // สรุปจำนวนการเพิ่ม/ลบ code
@@ -12,7 +14,7 @@ You are an expert Technical Content Creator and Senior Software Engineer. Your t
 
 ### CONTEXT DATA
 - **Project Change Summary:** ${params.commitsStatus || "N/A"}
-- **Commit Messages/Changelog:** ${params.changeLogContext || "No description provided"}
+- **Commit Messages/Changelog:** ${params.commitMessages.join("\n\n") || "No description provided"}
 - **Technical Diffs (Files & Patches):**
 ${params.commitsContext}
 

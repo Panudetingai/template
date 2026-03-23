@@ -10,9 +10,15 @@ import { api } from "@/lib/elysia/eden-client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
-import { useGeneratorStore } from "../stores/use-generator";
+import type { Platform } from "../stores/use-generator";
+import { useGeneratorStepStore, useGeneratorStore } from "../stores/use-generator";
+import {
+  usePreviewStore,
+  type PreviewPosts,
+} from "../stores/use-preview";
 
 export default function CommitList() {
+  const setStep = useGeneratorStepStore((state) => state.setStep);
   const selectedRepository = useGeneratorStore(
     (state) => state.selectedRepository,
   );
@@ -25,6 +31,7 @@ export default function CommitList() {
     (state) => state.setSelectedCommit,
   );
   const toggleCommit = useGeneratorStore((state) => state.toggleCommit);
+  const setPosts = usePreviewStore((state) => state.setPosts);
   const { isPending, data: commits } = useQuery({
     queryKey: [
       "commits",
@@ -51,6 +58,21 @@ export default function CommitList() {
           commit: selectedCommit.commits,
         });
         if (response.error) throw new Error(response.error.message as string);
+        const posts: PreviewPosts = {
+          twitter: null,
+          facebook: null,
+          instagram: null,
+        };
+        for (const item of response.data) {
+          const platform = item.platform as Platform;
+          if (platform in posts) {
+            posts[platform] = {
+              content: item.content,
+            };
+          }
+        }
+        setPosts(posts);
+        setStep(4);
         return response.data;
       },
     });
