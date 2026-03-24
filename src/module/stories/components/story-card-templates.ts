@@ -1,10 +1,10 @@
-import { CardBasic } from "@/module/storys/cards-social/aesthetic/card-basic";
-import BarcelonaMultilingual from "@/module/storys/cards-social/aesthetic/card-darcelonaMultilingual";
-import { CardEditorialAurora } from "@/module/storys/cards-social/aesthetic/card-editorial-aurora";
-import { CardEditorialOrage } from "@/module/storys/cards-social/aesthetic/card-editorial-orage";
-import { CardGlassComing } from "@/module/storys/cards-social/aesthetic/card-glass-coming";
-import { SettleTheDebate } from "@/module/storys/cards-social/aesthetic/card-settleTheDebate";
-import type { StoryCanvasPreset } from "@/module/storys/components/socials/story-canvas-presets";
+import { CardBasic } from "@/module/stories/cards-social/aesthetic/card-basic";
+import BarcelonaMultilingual from "@/module/stories/cards-social/aesthetic/card-darcelonaMultilingual";
+import { CardEditorialAurora } from "@/module/stories/cards-social/aesthetic/card-editorial-aurora";
+import { CardEditorialOrage } from "@/module/stories/cards-social/aesthetic/card-editorial-orage";
+import { CardGlassComing } from "@/module/stories/cards-social/aesthetic/card-glass-coming";
+import { SettleTheDebate } from "@/module/stories/cards-social/aesthetic/card-settleTheDebate";
+import type { StoryCanvasPreset } from "@/module/stories/components/socials/story-canvas-presets";
 import type { ElementType } from "react";
 
 export type StoryCardTemplateId =

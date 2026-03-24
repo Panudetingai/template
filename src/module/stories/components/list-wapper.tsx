@@ -1,16 +1,16 @@
 "use client";
 
-import { CardBasic } from "@/module/storys/cards-social/aesthetic/card-basic";
-import { CardEditorialAurora } from "@/module/storys/cards-social/aesthetic/card-editorial-aurora";
-import { CardGlassComing } from "@/module/storys/cards-social/aesthetic/card-glass-coming";
+import { CardBasic } from "@/module/stories/cards-social/aesthetic/card-basic";
+import { CardEditorialAurora } from "@/module/stories/cards-social/aesthetic/card-editorial-aurora";
+import { CardGlassComing } from "@/module/stories/cards-social/aesthetic/card-glass-coming";
 import { motion } from "framer-motion";
 import { useRef } from "react";
 import BarcelonaMultilingual from "../cards-social/aesthetic/card-darcelonaMultilingual";
 import { CardEditorialOrage } from "../cards-social/aesthetic/card-editorial-orage";
 import { SettleTheDebate } from "../cards-social/aesthetic/card-settleTheDebate";
 import {
-    STORY_CANVAS_PRESETS,
-    StoryCanvasPreset,
+  STORY_CANVAS_PRESETS,
+  StoryCanvasPreset,
 } from "./socials/story-canvas-presets";
 import { StoryShareActions } from "./socials/story-share-actions";
 import { StorySocialCard } from "./socials/story-social-card";

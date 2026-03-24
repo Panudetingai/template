@@ -15,7 +15,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/client";
 import useUsers from "@/lib/supabase/hooks/use-users";
-import { BadgeCheck, Bell, CreditCard, Github, LogOut, Sparkles } from "lucide-react";
+import { Github } from "@lobehub/icons";
+import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { handleLinkProvider } from "./handles/linkprovider";
 
@@ -26,7 +27,7 @@ function ConnectGitHubItem() {
 
   return (
     <DropdownMenuItem onClick={handleConnect}>
-      <Github className="size-4" />
+      <Github.Avatar size={24} />
       Connect GitHub
     </DropdownMenuItem>
   );

@@ -17,7 +17,7 @@ type StoryShareActionsProps = {
   backgroundColor?: string;
 };
 
-/** Export PNG at target width, then share or download. */
+/** Export PNG at target width, then share or download (จากพรีวิวใน DOM). */
 export function StoryShareActions({
   exportRef,
   filename = "dayily-story.png",
@@ -40,6 +40,7 @@ export function StoryShareActions({
       pixelRatio,
       cacheBust: true,
       backgroundColor,
+      skipFonts: true,
     });
     return dataUrl;
   }, [exportRef, targetWidth, backgroundColor]);
@@ -86,7 +87,9 @@ export function StoryShareActions({
       }
 
       triggerDownload(dataUrl);
-      toast.message("เบราว์เซอร์นี้ไม่รองรับแชร์ไฟล์โดยตรง — ดาวน์โหลดให้แล้ว นำไปอัปโหลดในแอป Story ได้เลย");
+      toast.message(
+        "เบราว์เซอร์นี้ไม่รองรับแชร์ไฟล์โดยตรง — ดาวน์โหลดให้แล้ว นำไปอัปโหลดในแอป Story ได้เลย",
+      );
     } catch (e) {
       if ((e as Error).name === "AbortError") return;
       console.error(e);
@@ -106,11 +109,23 @@ export function StoryShareActions({
       <p className="text-muted-foreground w-full text-xs sm:mr-auto sm:w-auto">
         บันทึกเป็น PNG แล้วแชร์ไป Instagram / TikTok / Facebook Stories
       </p>
-      <Button type="button" variant="default" size="sm" disabled={busy} onClick={onShare}>
+      <Button
+        type="button"
+        variant="default"
+        size="sm"
+        disabled={busy}
+        onClick={onShare}
+      >
         <Share2 className="size-4" />
         แชร์
       </Button>
-      <Button type="button" variant="outline" size="sm" disabled={busy} onClick={onDownload}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={busy}
+        onClick={onDownload}
+      >
         <Download className="size-4" />
         ดาวน์โหลด PNG
       </Button>

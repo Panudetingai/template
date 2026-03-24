@@ -97,8 +97,7 @@ export const CardBasic = forwardRef<HTMLDivElement, CardBasicProps>(function Car
             >
               {codeHighlight}
             </code>
-          ) : null}{" "}
-          ครั้งแรก
+          ) : null}
         </p>
 
         {quote ? (

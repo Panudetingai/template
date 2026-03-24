@@ -40,7 +40,7 @@ Every key in the schema is required — for optional-looking fields (codeHighlig
 - Thai-first for emotional lines; English for technical terms (commit, deploy, OAuth, schema, API, CLI commands).
 - No hashtags. No bullet lists in any string.
 - title: hook-like, ≤ ~12 words if Thai-heavy.
-- body: 1–2 sentences that flow into the inline \`codeHighlight\` pill; do NOT end body with "ครั้งแรก" (the UI appends it).
+- body: 1–2 sentences that flow into the inline \`codeHighlight\` pill; end the sentence naturally (no fixed suffix after the pill).
 - quote: optional; one sharp line, can use curly quotes in the string.
 - username: optional; prefer @handle style if you invent one.
 

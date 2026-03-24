@@ -19,45 +19,35 @@ import {
   storyCardGlassAiToCardProps,
   type StoryCardGlassAi,
 } from "@/module/generator/services/types/story-card-glass";
-import type { StoryGeneratorAiPreview } from "@/module/storys/components/story-generator-preview";
-import { STORY_CANVAS_PRESETS } from "@/module/storys/components/socials/story-canvas-presets";
-import { StoryShareActions } from "@/module/storys/components/socials/story-share-actions";
-import { StorySocialCard } from "@/module/storys/components/socials/story-social-card";
 import {
-  getStoryCardTemplate,
-  STORY_CARD_TEMPLATES,
-  type StoryCardTemplateId,
-} from "@/module/storys/components/story-card-templates";
+  getStoryCardTemplate
+} from "@/module/stories/components/story-card-templates";
+import type { StoryGeneratorAiPreview } from "@/module/stories/components/story-generator-preview";
+import {
+  useStoryGeneratorStore,
+  type StoryCommitSelection,
+} from "@/module/stories/stores/use-story-generator";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ChevronRight, GitBranch, Loader2, Sparkles } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
-
-type SelectedRepo = {
-  repositoryName: string;
-  repositoryOwner: string;
-};
-
-type CommitSelection = {
-  commitMessage: string;
-  commitSha: string;
-  commitAuthor: string;
-  commitDate: string;
-};
+import useModalStore from "../stores/use-modal";
+import { SelectCardStory } from "./panels/select-card";
 
 /** แผงหลัก: เลือก repo / commit / เทมเพลต + generate story card (Basic / Glass) */
 export function StoryGeneratorPanel() {
-  const exportRef = useRef<HTMLDivElement>(null);
-  const [repo, setRepo] = useState<SelectedRepo | null>(null);
-  const [selectedCommits, setSelectedCommits] = useState<CommitSelection[]>(
-    [],
-  );
-  const [templateId, setTemplateId] = useState<StoryCardTemplateId>("basic");
-  const [extraPrompt, setExtraPrompt] = useState("");
-  const [aiPreview, setAiPreview] = useState<StoryGeneratorAiPreview | null>(
-    null,
-  );
+  const setModal = useModalStore((s) => s.setModal);
+  const repo = useStoryGeneratorStore((s) => s.repo);
+  const selectedCommits = useStoryGeneratorStore((s) => s.selectedCommits);
+  const templateId = useStoryGeneratorStore((s) => s.templateId);
+  const extraPrompt = useStoryGeneratorStore((s) => s.extraPrompt);
+  const setRepo = useStoryGeneratorStore((s) => s.setRepo);
+  const setSelectedCommits = useStoryGeneratorStore((s) => s.setSelectedCommits);
+  const setTemplateId = useStoryGeneratorStore((s) => s.setTemplateId);
+  const setExtraPrompt = useStoryGeneratorStore((s) => s.setExtraPrompt);
+  const setAiPreview = useStoryGeneratorStore((s) => s.setAiPreview);
+  const toggleCommit = useStoryGeneratorStore((s) => s.toggleCommit);
 
   const template = useMemo(
     () => getStoryCardTemplate(templateId),
@@ -96,19 +86,9 @@ export function StoryGeneratorPanel() {
     enabled: !!repo,
   });
 
-  const toggleCommit = (c: CommitSelection) => {
-    setSelectedCommits((prev) => {
-      const exists = prev.some((x) => x.commitSha === c.commitSha);
-      if (exists) {
-        return prev.filter((x) => x.commitSha !== c.commitSha);
-      }
-      return [...prev, c];
-    });
-  };
-
   const toCommitData = (
     commit: NonNullable<typeof commits>[number],
-  ): CommitSelection => ({
+  ): StoryCommitSelection => ({
     commitMessage: commit.commit.message,
     commitSha: commit.sha,
     commitAuthor: commit.commit.author?.name ?? "",
@@ -154,17 +134,14 @@ export function StoryGeneratorPanel() {
     },
     onSuccess: (data) => {
       setAiPreview(data);
+      setModal("preview");
       toast.success("สร้างการ์ดแล้ว");
+
     },
     onError: (e: Error) => {
       toast.error(e.message ?? "สร้างการ์ดไม่สำเร็จ");
     },
   });
-
-  const handleTemplateChange = (id: StoryCardTemplateId) => {
-    setTemplateId(id);
-    setAiPreview(null);
-  };
 
   return (
     <section className="">
@@ -214,8 +191,6 @@ export function StoryGeneratorPanel() {
                         repositoryName: r.name,
                         repositoryOwner: r.owner.login,
                       });
-                      setSelectedCommits([]);
-                      setAiPreview(null);
                     }}
                   >
                     <CardContent className="flex items-center justify-between gap-4 py-4">
@@ -256,11 +231,7 @@ export function StoryGeneratorPanel() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
-                setRepo(null);
-                setSelectedCommits([]);
-                setAiPreview(null);
-              }}
+              onClick={() => setRepo(null)}
             >
               เปลี่ยน repo
             </Button>
@@ -361,39 +332,7 @@ export function StoryGeneratorPanel() {
           </div>
 
           <div className="space-y-3">
-            <Label className="text-foreground text-xs font-medium uppercase tracking-wide">
-              3 · เลือกสไตล์การ์ด (Story 9:16)
-            </Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {STORY_CARD_TEMPLATES.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => handleTemplateChange(t.id)}
-                  className={cn(
-                    "rounded-lg border px-3 py-2.5 text-left text-xs transition-colors",
-                    templateId === t.id
-                      ? "border-primary bg-primary/10 ring-primary/30 ring-1"
-                      : "border-border hover:bg-muted/50",
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="font-medium">{t.label}</span>
-                    {t.aiKind !== "none" ? (
-                      <Badge
-                        variant="secondary"
-                        className="h-5 px-1.5 text-[9px] font-normal"
-                      >
-                        AI
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px]">
-                    {t.description}
-                  </p>
-                </button>
-              ))}
-            </div>
+            <SelectCardStory />
           </div>
 
           <div className="space-y-2">
@@ -437,48 +376,8 @@ export function StoryGeneratorPanel() {
           ) : null}
         </div>
       )}
-
-      <Separator className="my-6" />
-
-      <div className="space-y-2">
-        <Label className="text-foreground text-xs font-medium uppercase tracking-wide">
-          พรีวิว
-        </Label>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,280px)] lg:items-start">
-          <div ref={exportRef} className="w-full min-w-0">
-            <StorySocialCard
-              preset={template.preset}
-              Card={template.Card}
-              filename={template.filename}
-              captureBackgroundColor={template.captureBackgroundColor}
-              showMeta={false}
-              cardProps={
-                aiPreview &&
-                template.aiKind !== "none" &&
-                aiPreview.variant === template.aiKind
-                  ? aiPreview.props
-                  : undefined
-              }
-            />
-          </div>
-          <div className="space-y-3">
-            <StoryShareActions
-              exportRef={exportRef}
-              filename={template.filename}
-              targetWidth={STORY_CANVAS_PRESETS[template.preset].exportWidth}
-              backgroundColor={template.captureBackgroundColor}
-            />
-            {template.aiKind !== "none" && !aiPreview ? (
-              <p className="text-muted-foreground text-center text-[11px]">
-                เลือก commit แล้วกด Generate เพื่อเติมข้อความ
-              </p>
-            ) : null}
-          </div>
-        </div>
-      </div>
     </section>
   );
 }
 
-/** @deprecated ใช้ชื่อ StoryGeneratorPanel แทน */
 export const StoryAiBasicDemo = StoryGeneratorPanel;

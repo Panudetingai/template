@@ -11,9 +11,7 @@ export const storyCardBasicAiSchema = z.object({
   body: z
     .string()
     .max(420)
-    .describe(
-      "ย่อหน้าก่อน code pill — การ์ดต่อท้ายด้วย code แล้วคำว่า ครั้งแรก",
-    ),
+    .describe("ย่อหน้าก่อน code pill — เขียนให้จบประโยคสมบูรณ์ก่อน pill"),
   codeHighlight: z
     .string()
     .max(72)
