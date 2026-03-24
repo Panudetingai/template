@@ -16,7 +16,7 @@ export type StoryCardTemplateId =
   | "barcelona";
 
 /** แมปไป endpoint / model ของ story card */
-export type StoryCardAiKind = "none" | "basic" | "glass";
+export type StoryCardAiKind = "none" | "basic" | "glass" | "settle-debate" | "aurora" | "orage";
 
 export type StoryCardTemplateItem = {
   id: StoryCardTemplateId;
@@ -60,7 +60,7 @@ export const STORY_CARD_TEMPLATES: StoryCardTemplateItem[] = [
     Card: CardEditorialAurora,
     filename: "dayily-editorial.png",
     captureBackgroundColor: "#f4f4f2",
-    aiKind: "none",
+    aiKind: "aurora",
   },
   {
     id: "editorial-orage",
@@ -70,7 +70,7 @@ export const STORY_CARD_TEMPLATES: StoryCardTemplateItem[] = [
     Card: CardEditorialOrage,
     filename: "dayily-editorial-orage.png",
     captureBackgroundColor: "#f4f4f2",
-    aiKind: "none",
+    aiKind: "orage",
   },
   {
     id: "settle-debate",
@@ -80,7 +80,7 @@ export const STORY_CARD_TEMPLATES: StoryCardTemplateItem[] = [
     Card: SettleTheDebate,
     filename: "dayily-settle-the-debate.png",
     captureBackgroundColor: "#ffffff",
-    aiKind: "none",
+    aiKind: "settle-debate",
   },
   {
     id: "barcelona",

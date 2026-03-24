@@ -5,17 +5,23 @@ import {
 } from "@/module/services/agents/llmprovider.service";
 import { githubService } from "@/module/services/github/github.service";
 import { generateText, Output } from "ai";
-import { summarizePatches } from "./lib/summzieContext";
 import { buildStoryCardCommitContext } from "./lib/story-card-commit-context";
+import { summarizePatches } from "./lib/summzieContext";
 import { generatePostsPrompt } from "./prompts/generate";
+import { generateStoryCardEditorialAuroraPrompt } from "./prompts/story-card-aurora";
 import { generateStoryCardBasicPrompt } from "./prompts/story-card-basic";
+import { generateStoryCardEditorialOragePrompt } from "./prompts/story-card-editorage";
 import { generateStoryCardGlassPrompt } from "./prompts/story-card-glass";
+import { generateStoryCardSettleTheDebatePrompt } from "./prompts/story-card-settle";
 import {
   storyCardBasicAiSchema,
   storyCardGlassAiSchema,
   type GeneratedPostsRequest,
   type GenerateStoryCardFromGithubRequest,
 } from "./types";
+import { storyCardAuroraAiSchema } from "./types/story-card-aurara";
+import { storyCardOrageAiSchema } from "./types/story-card-editorage";
+import { storyCardSettleTheDebateAiSchema } from "./types/story-card-settleTheDebate";
 
 export interface GeneratedPostResponse {
   platform: Platform;
@@ -131,10 +137,101 @@ class GeneratorService {
 
     return result.output;
   }
-}
 
+  public async generateStoryCardSettleTheDebate(request: GenerateStoryCardFromGithubRequest) {
+    const gh = await githubService();
+    const model = await LLMModel(this.llmProvider);
+
+    const ctx = await buildStoryCardCommitContext(
+      (args) => gh.getCommitFiles(args),
+      request,
+    );
+
+    const prompt = generateStoryCardSettleTheDebatePrompt({
+      commitMessages: ctx.commitMessages,
+      files: ctx.files,
+      commitsContext: ctx.commitsContext,
+      userPrompt: request.prompt?.trim() || undefined,
+    });
+
+    const result = await generateText({
+      model: model.languageModel("openai/gpt-oss-120b"),
+      output: Output.object({
+        schema: storyCardSettleTheDebateAiSchema,
+        name: "StoryCardSettleTheDebate",
+        description:
+          "Copy fields for settle the debate style 9:16 story card",
+      }),
+      prompt,
+      maxOutputTokens: 2000,
+    });
+    return result.output;
+  }
+
+  public async generateStoryCardEditorialAurora(request: GenerateStoryCardFromGithubRequest) {
+    const gh = await githubService();
+    const model = await LLMModel(this.llmProvider);
+
+    const ctx = await buildStoryCardCommitContext(
+      (args) => gh.getCommitFiles(args),
+      request,
+    );
+
+    const prompt = generateStoryCardEditorialAuroraPrompt({
+      commitMessages: ctx.commitMessages,
+      files: ctx.files,
+      commitsContext: ctx.commitsContext,
+      userPrompt: request.prompt?.trim() || undefined,
+    });
+
+    const result = await generateText({
+      model: model.languageModel("openai/gpt-oss-120b"),
+      output: Output.object({
+        schema: storyCardAuroraAiSchema,
+        name: "StoryCardAurora",
+        description:
+          "Copy fields for editorial aurora style 9:16 story card",
+      }),
+      prompt,
+      maxOutputTokens: 2000,
+    });
+
+    return result.output;
+  }
+
+  public async generateStoryCardEditorialOrage(request: GenerateStoryCardFromGithubRequest) {
+    const gh = await githubService();
+    const model = await LLMModel(this.llmProvider);
+
+    const ctx = await buildStoryCardCommitContext(
+      (args) => gh.getCommitFiles(args),
+      request,
+    );
+
+    const prompt = generateStoryCardEditorialOragePrompt({
+      commitMessages: ctx.commitMessages,
+      files: ctx.files,
+      commitsContext: ctx.commitsContext,
+      userPrompt: request.prompt?.trim() || undefined,
+    });
+
+    const result = await generateText({
+      model: model.languageModel("openai/gpt-oss-120b"),
+      output: Output.object({
+        schema: storyCardOrageAiSchema,
+        name: "StoryCardOrage",
+        description:
+          "Copy fields for editorial orage style 9:16 story card",
+      }),
+      prompt,
+      maxOutputTokens: 2000,
+    });
+
+    return result.output;
+  }
+}
 const generatePostsService = (LLMProvider: LLMProvider) => {
   return new GeneratorService(LLMProvider);
 };
-
 export { generatePostsService, GeneratorService };
+

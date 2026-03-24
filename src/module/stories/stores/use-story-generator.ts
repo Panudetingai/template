@@ -21,6 +21,8 @@ interface StoryGeneratorStore {
   templateId: StoryCardTemplateId;
   extraPrompt: string;
   aiPreview: StoryGeneratorAiPreview | null;
+  /** ระหว่างเรียก AI generate — ใช้แสดง loading ใน preview (desktop + modal mobile) */
+  isGenerating: boolean;
 
   setRepo: (repo: StorySelectedRepo | null) => void;
   setSelectedCommits: (commits: StoryCommitSelection[]) => void;
@@ -28,6 +30,7 @@ interface StoryGeneratorStore {
   setTemplateId: (id: StoryCardTemplateId) => void;
   setExtraPrompt: (value: string) => void;
   setAiPreview: (preview: StoryGeneratorAiPreview | null) => void;
+  setGenerating: (value: boolean) => void;
 }
 
 const useStoryGeneratorStore = create<StoryGeneratorStore>((set) => ({
@@ -36,12 +39,14 @@ const useStoryGeneratorStore = create<StoryGeneratorStore>((set) => ({
   templateId: "basic",
   extraPrompt: "",
   aiPreview: null,
+  isGenerating: false,
 
   setRepo: (repo) =>
     set({
       repo,
       selectedCommits: [],
       aiPreview: null,
+      isGenerating: false,
     }),
 
   setSelectedCommits: (commits) => set({ selectedCommits: commits }),
@@ -59,11 +64,14 @@ const useStoryGeneratorStore = create<StoryGeneratorStore>((set) => ({
       return { selectedCommits: [...state.selectedCommits, c] };
     }),
 
-  setTemplateId: (templateId) => set({ templateId, aiPreview: null }),
+  setTemplateId: (templateId) =>
+    set({ templateId, aiPreview: null, isGenerating: false }),
 
   setExtraPrompt: (extraPrompt) => set({ extraPrompt }),
 
   setAiPreview: (aiPreview) => set({ aiPreview }),
+
+  setGenerating: (isGenerating) => set({ isGenerating }),
 }));
 
 export { useStoryGeneratorStore };

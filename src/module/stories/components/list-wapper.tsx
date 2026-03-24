@@ -90,10 +90,10 @@ export const StorySocialCardList = {
 export default function ListWapper() {
   const exportRef = useRef<HTMLDivElement>(null);
   return (
-    <div className="flex flex-col gap-12">
-      <section className="space-y-3">
+    <div className="flex flex-col gap-12 mt-4 border-t pt-4">
+      <section className="space-y-6">
         <h2 className="text-foreground text-sm font-semibold">
-          Story 9:16 — หลายสไตล์ (ปรับตามความกว้างหน้าจอ)
+          Story 9:16 — Multiple Templates (adjust to screen width)
         </h2>
         <div className="grid grid-cols-1 gap-8 min-[1100px]:grid-cols-2 min-[1600px]:grid-cols-3">
           {StorySocialCardList.storys.map((item, index) => (
@@ -126,7 +126,7 @@ export default function ListWapper() {
         </div>
       </section>
 
-      <section className="space-y-3">
+      {/* <section className="space-y-3">
         <h2 className="text-foreground text-sm font-semibold">
           OG 1200×630 — เหมาะกับลิงก์พรีวิว
         </h2>
@@ -164,7 +164,7 @@ export default function ListWapper() {
             captureBackgroundColor="#f4f4f2"
           />
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

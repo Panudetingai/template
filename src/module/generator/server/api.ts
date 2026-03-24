@@ -40,6 +40,39 @@ const generate = new Elysia()
     {
       body: generateStoryCardFromGithubRequestSchema,
     },
+  )
+  .post(
+    "/storyCardSettleTheDebate",
+    async ({ body }) => {
+      return await generatePostsService(
+        LLMProvider.GROQ,
+      ).generateStoryCardSettleTheDebate(body);
+    },
+    {
+      body: generateStoryCardFromGithubRequestSchema,
+    },
+  )
+  .post(
+    "/storyCardAurora",
+    async ({ body }) => {
+      return await generatePostsService(
+        LLMProvider.GROQ,
+      ).generateStoryCardEditorialAurora(body);
+    },
+    {
+      body: generateStoryCardFromGithubRequestSchema,
+    },
+  )
+  .post(
+    "/storyCardOrage",
+    async ({ body }) => {
+      return await generatePostsService(
+        LLMProvider.GROQ,
+      ).generateStoryCardEditorialOrage(body);
+    },
+    {
+      body: generateStoryCardFromGithubRequestSchema,
+    },
   );
 
 export { generate };

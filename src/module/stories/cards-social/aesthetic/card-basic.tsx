@@ -1,5 +1,6 @@
 "use client";
 
+import useUsers from "@/lib/supabase/hooks/use-users";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { th } from "date-fns/locale/th";
@@ -24,7 +25,6 @@ export type CardBasicProps = {
   /** Shown inside a monospace pill in the body line */
   codeHighlight?: string;
   quote?: string;
-  username?: string;
   footerTag?: string;
   brandLine?: string;
 };
@@ -36,10 +36,9 @@ export const CardBasic = forwardRef<HTMLDivElement, CardBasicProps>(function Car
     seriesLabel = "DAYILY WRAPPED",
     dateLabel,
     title = "The day I deleted a GitHub Action and slept better.",
-    body = "workflow ที่เคยดูสะอาดกลายเป็นภาระ ทุกครั้งที่ต้อง release — จนกว่าจะเจอ",
+    body = "A workflow that used to be clean became a burden every time I had to release — until I found a solution",
     codeHighlight = "gh release create",
-    quote = "“Native CLI ที่เข้าใจ environment ดีมักชนะ action wrapper เสมอ — เพียงแค่เข้าใจ syntax”",
-    username = "@panudet",
+    quote = "“A native CLI that understands the environment well usually wins over action wrapper — just by understanding the syntax”",
     footerTag = "DAYILY • 2025",
     brandLine = "Made with",
   },
@@ -48,6 +47,7 @@ export const CardBasic = forwardRef<HTMLDivElement, CardBasicProps>(function Car
   const date =
     dateLabel ?? format(new Date(), "d MMMM", { locale: th });
 
+    const userName = useUsers().user_metadata?.username;
   return (
     <div
       ref={ref}
@@ -112,7 +112,7 @@ export const CardBasic = forwardRef<HTMLDivElement, CardBasicProps>(function Car
 
       <footer className="mt-auto flex shrink-0 flex-wrap items-end justify-between gap-4 pt-10">
         <div className="min-w-0 space-y-1">
-          <p className="truncate text-sm font-semibold text-white">{username}</p>
+          <p className="truncate text-sm font-semibold text-white">{userName}</p>
           <p
             className="text-[10px] font-medium tracking-[0.14em] uppercase"
             style={{ color: MUTED }}

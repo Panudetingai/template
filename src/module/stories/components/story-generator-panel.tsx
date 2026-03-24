@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/elysia/eden-client";
 import { assertEdenOk } from "@/lib/elysia/eden-response";
 import { cn } from "@/lib/utils";
+import { StoryCardAuroraAi, storyCardAuroraAiToCardProps } from "@/module/generator/services/types/story-card-aurara";
 import {
   storyCardBasicAiToCardProps,
   type StoryCardBasicAi,
@@ -19,6 +20,7 @@ import {
   storyCardGlassAiToCardProps,
   type StoryCardGlassAi,
 } from "@/module/generator/services/types/story-card-glass";
+import { StoryCardSettleTheDebateAi, storyCardSettleTheDebateAiToCardProps } from "@/module/generator/services/types/story-card-settleTheDebate";
 import {
   getStoryCardTemplate
 } from "@/module/stories/components/story-card-templates";
@@ -29,11 +31,14 @@ import {
 } from "@/module/stories/stores/use-story-generator";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, GitBranch, Loader2, Sparkles } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { toast } from "sonner";
 import useModalStore from "../stores/use-modal";
+import { StoryPreviewContent } from "./story-preview-content";
 import { SelectCardStory } from "./panels/select-card";
+import { StoryCardOrageAi, storyCardOrageAiToCardProps } from "@/module/generator/services/types/story-card-editorage";
 
 /** แผงหลัก: เลือก repo / commit / เทมเพลต + generate story card (Basic / Glass) */
 export function StoryGeneratorPanel() {
@@ -44,10 +49,13 @@ export function StoryGeneratorPanel() {
   const extraPrompt = useStoryGeneratorStore((s) => s.extraPrompt);
   const setRepo = useStoryGeneratorStore((s) => s.setRepo);
   const setSelectedCommits = useStoryGeneratorStore((s) => s.setSelectedCommits);
-  const setTemplateId = useStoryGeneratorStore((s) => s.setTemplateId);
   const setExtraPrompt = useStoryGeneratorStore((s) => s.setExtraPrompt);
   const setAiPreview = useStoryGeneratorStore((s) => s.setAiPreview);
+  const aiPreview = useStoryGeneratorStore((s) => s.aiPreview);
+  const isGenerating = useStoryGeneratorStore((s) => s.isGenerating);
+  const setGenerating = useStoryGeneratorStore((s) => s.setGenerating);
   const toggleCommit = useStoryGeneratorStore((s) => s.toggleCommit);
+  const desktopPreviewRef = useRef<HTMLDivElement>(null);
 
   const template = useMemo(
     () => getStoryCardTemplate(templateId),
@@ -130,16 +138,62 @@ export function StoryGeneratorPanel() {
         };
       }
 
+      if (template.aiKind === "settle-debate") {
+        const data = assertEdenOk<StoryCardSettleTheDebateAi>(
+          await api.generator.storyCardSettleTheDebate.post(body),
+        );
+        return {
+          variant: "settle-debate",
+          props: storyCardSettleTheDebateAiToCardProps(data),
+        };
+      }
+
+      if (template.aiKind === "aurora") {
+        const data = assertEdenOk<StoryCardAuroraAi>(
+          await api.generator.storyCardAurora.post(body),
+        );
+        return {
+          variant: "aurora",
+          props: storyCardAuroraAiToCardProps(data),
+        };
+      }
+
+      if (template.aiKind === "orage") {
+        const data = assertEdenOk<StoryCardOrageAi>(
+          await api.generator.storyCardOrage.post(body),
+        );
+        return {
+          variant: "orage",
+          props: storyCardOrageAiToCardProps(data),
+        };
+      }
       throw new Error("ไม่รองรับเทมเพลตนี้");
+    },
+    onMutate: () => {
+      setGenerating(true);
+      if (
+        typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 767px)").matches
+      ) {
+        setModal("preview");
+      }
     },
     onSuccess: (data) => {
       setAiPreview(data);
-      setModal("preview");
+      if (
+        typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 767px)").matches
+      ) {
+        setModal("preview");
+      }
       toast.success("สร้างการ์ดแล้ว");
-
     },
     onError: (e: Error) => {
       toast.error(e.message ?? "สร้างการ์ดไม่สำเร็จ");
+      setModal(null);
+    },
+    onSettled: () => {
+      setGenerating(false);
     },
   });
 
@@ -147,12 +201,12 @@ export function StoryGeneratorPanel() {
     <section className="">
       <div className="space-y-1">
         <h2 className="text-foreground text-sm font-semibold">
-          สร้าง Story จาก GitHub + เลือกเทมเพลต
+          Create Story Card from GitHub + Select Template
         </h2>
         <p className="text-muted-foreground text-xs sm:text-sm">
-          เลือก repo → เลือก commit (หลายอันได้) → เลือกสไตล์การ์ด → โน้ตเพิ่มได้
-          — AI เติม copy ได้ที่เทมเพลต{" "}
-          <span className="text-foreground font-medium">Wrapped</span> และ{" "}
+          Select Repository → Select Commit (Multiple) → Select Template → Add Note (Optional)
+          — AI fill copy at template{" "}
+          <span className="text-foreground font-medium">Wrapped</span> and{" "}
           <span className="text-foreground font-medium">Glass</span>
         </p>
       </div>
@@ -162,7 +216,7 @@ export function StoryGeneratorPanel() {
       {!repo ? (
         <div className="space-y-3">
           <Label className="text-foreground text-xs font-medium uppercase tracking-wide">
-            1 · เลือก Repository
+            1 · Select Repository
           </Label>
           {reposLoading ? (
             <div className="flex max-h-[min(480px,55dvh)] flex-col gap-2 overflow-y-auto pr-1">
@@ -219,7 +273,8 @@ export function StoryGeneratorPanel() {
           )}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(260px,420px)] md:items-start">
+          <div className="min-w-0 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm">
               <span className="text-muted-foreground">Repo · </span>
@@ -233,13 +288,13 @@ export function StoryGeneratorPanel() {
               size="sm"
               onClick={() => setRepo(null)}
             >
-              เปลี่ยน repo
+              Change Repository
             </Button>
           </div>
 
           <div className="space-y-3">
             <Label className="text-foreground text-xs font-medium uppercase tracking-wide">
-              2 · เลือก Commit
+              2 · Select Commit
             </Label>
             {commitsLoading ? (
               <div className="flex flex-col gap-2">
@@ -265,7 +320,7 @@ export function StoryGeneratorPanel() {
                         )
                       }
                     >
-                      เลือกทั้งหมด
+                      Select All
                     </Button>
                     <Button
                       type="button"
@@ -274,7 +329,7 @@ export function StoryGeneratorPanel() {
                       className="h-auto px-2 py-0"
                       onClick={() => setSelectedCommits([])}
                     >
-                      ล้าง
+                      Clear
                     </Button>
                   </div>
                 </div>
@@ -337,14 +392,14 @@ export function StoryGeneratorPanel() {
 
           <div className="space-y-2">
             <Label htmlFor="story-extra-prompt">
-              โน้ตเพิ่มให้ AI (ไม่บังคับ)
+              Add Note to AI (Optional)
             </Label>
             <Textarea
               id="story-extra-prompt"
               rows={3}
               value={extraPrompt}
               onChange={(e) => setExtraPrompt(e.target.value)}
-              placeholder="เช่น เน้นโทน funny หรือเล่าเรื่อง refactor มากกว่า feature"
+              placeholder="e.g. emphasize funny tone or tell a story about refactor more than feature"
               className="text-sm"
             />
           </div>
@@ -366,14 +421,39 @@ export function StoryGeneratorPanel() {
               <Sparkles className="size-4" />
             )}
             {template.aiKind !== "none"
-              ? "Generate จาก commit"
-              : "สไตล์นี้ยังไม่มี AI"}
+              ? "Generate from commit"
+              : "This template does not have AI"}
           </Button>
           {template.aiKind === "none" ? (
             <p className="text-muted-foreground text-[11px]">
-              พรีวิวเป็น layout คงที่ — ใช้ AI ได้เมื่อเลือกเทมเพลต Wrapped หรือ Glass
+              Preview is fixed layout — AI is available when selecting template Wrapped or Glass
             </p>
           ) : null}
+          </div>
+
+          <aside className="hidden md:block">
+            <div className="sticky top-20 space-y-3">
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                Preview
+              </p>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={
+                    isGenerating ? "loading" : aiPreview ? "card" : "empty"
+                  }
+                  initial={{ opacity: 0, x: 24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 16 }}
+                  transition={{
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  <StoryPreviewContent exportRef={desktopPreviewRef} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </aside>
         </div>
       )}
     </section>

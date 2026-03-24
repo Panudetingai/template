@@ -27,7 +27,6 @@ export const CardEditorialAurora = forwardRef<
     titleLine2 = "TWAIN",
     topLeft = "Born —\nNovember 30, 1835",
     midLeft = "Greatest humorist the United States\nAmerican writer",
-    bottomLeftList = ["DAYILY • 2025"],
   },
   ref,
 ) {
@@ -92,7 +91,7 @@ export const CardEditorialAurora = forwardRef<
         className="absolute bottom-[6%] left-[5%] z-10 space-y-[0.15em] text-[length:clamp(0.5rem,2.8cqw,0.75rem)] font-medium"
         style={{ color: "#1a1a1a" }}
       >
-        {bottomLeftList.map((line) => (
+        {["DAYILY • 2025"].map((line) => (
           <li key={line}>{line}</li>
         ))}
       </ul>
