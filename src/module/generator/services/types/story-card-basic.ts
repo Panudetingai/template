@@ -32,7 +32,6 @@ export function storyCardBasicAiToCardProps(ai: StoryCardBasicAi): CardBasicProp
   if (t(ai.body)) out.body = t(ai.body);
   if (t(ai.codeHighlight)) out.codeHighlight = t(ai.codeHighlight);
   if (t(ai.quote)) out.quote = t(ai.quote);
-  if (t(ai.username)) out.username = t(ai.username);
   if (t(ai.footerTag)) out.footerTag = t(ai.footerTag);
   if (t(ai.brandLine)) out.brandLine = t(ai.brandLine);
   return out;
