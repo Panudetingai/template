@@ -271,7 +271,7 @@ const auth = new Elysia()
         updatedAt: new Date().toISOString(),
       })
       .onConflictDoUpdate({
-        target: [users.id, users.email],
+        target: [users.id],
         set: {
           username: data.user.user_metadata.username,
           email: data.user.user_metadata.email!,

@@ -1,5 +1,6 @@
 import routerConfig from "@/configs/route.config";
 import {
+  BookIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
   LucideIcon,
@@ -53,6 +54,12 @@ const sidebarItems: groupItems[] = [
         icon: MessageCircleIcon,
         role: ["pro", "team", "free"],
       },
+      {
+        label: "stories",
+        icon: BookIcon,
+        role: ["pro", "team", "free"],
+        href: routerConfig.app.Stories,
+      }
     ],
   },
   {

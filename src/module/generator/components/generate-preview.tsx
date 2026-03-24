@@ -13,13 +13,13 @@ import { Loader } from "@/components/ui/loader";
 import { useTextStream } from "@/components/ui/response-stream";
 import { api } from "@/lib/elysia/eden-client";
 import { useMutation } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
 import { CheckIcon, CopyIcon, Sparkles } from "lucide-react";
 import { markdownToTxt } from "markdown-to-txt";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { formatMarkdown } from "../services/lib/formatterMarkdown";
 import { Platform, useGeneratorStore } from "../stores/use-generator";
 import { PreviewPosts, usePreviewStore } from "../stores/use-preview";
-
 function CopyButton({
   posts,
   activeValue,
@@ -28,20 +28,46 @@ function CopyButton({
   activeValue: Platform;
 }) {
   const [isCopied, setIsCopied] = useState(false);
+
   const handleCopy = useCallback(() => {
     const content = posts[activeValue]?.content ?? "";
     navigator.clipboard.writeText(markdownToTxt(content));
     setIsCopied(true);
   }, [posts, activeValue]);
 
-  useEffect(() => {
-    navigator.clipboard.readText().then((text) => setIsCopied(text === posts[activeValue]?.content));
-  }, [posts, activeValue]);
-  
+  setTimeout(() => {
+    setIsCopied(false);
+  }, 250 * 60);
+
   return (
     <Button variant="outline" size="sm" onClick={handleCopy}>
-      {isCopied ? "Copied" : "Copy"}
-      {isCopied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+      <AnimatePresence initial={false} mode="wait">
+        {isCopied ? (
+          <motion.span
+            key="copied"
+            className="flex items-center gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            Copied
+            <CheckIcon className="size-4" />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="copy"
+            className="flex items-center gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            Copy
+            <CopyIcon className="size-4" />
+          </motion.span>
+        )}
+      </AnimatePresence>
     </Button>
   );
 }
@@ -54,7 +80,9 @@ export default function GeneratePreview() {
   );
 
   const content = posts[activePlatform]?.content ?? "";
-  const shouldStream = Boolean(content && !streamedPlatforms.has(activePlatform));
+  const shouldStream = Boolean(
+    content && !streamedPlatforms.has(activePlatform),
+  );
   const handleStreamComplete = useCallback(
     () => setStreamedPlatforms((prev) => new Set(prev).add(activePlatform)),
     [activePlatform],
@@ -93,8 +121,7 @@ export default function GeneratePreview() {
               const platformKey = platform as Platform;
               const platformContent = posts[platformKey]?.content ?? "";
               const isActive = platformKey === activePlatform;
-              const showStream =
-                isActive && shouldStream && platformContent;
+              const showStream = isActive && shouldStream && platformContent;
               return (
                 <TabsContent key={platform} value={platform} className="mt-2">
                   {platformContent ? (
@@ -120,11 +147,8 @@ export default function GeneratePreview() {
 }
 
 function GeneratePostforPlatform({ platform }: { platform: Platform }) {
-  const {
-    selectedCommit,
-    selectedTone,
-    selectedRepository,
-  } = useGeneratorStore();
+  const { selectedCommit, selectedTone, selectedRepository } =
+    useGeneratorStore();
   const setPosts = usePreviewStore((state) => state.setPosts);
   const { mutate: handleGeneratePost, isPending: isGeneratingPost } =
     useMutation({

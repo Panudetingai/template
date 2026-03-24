@@ -17,7 +17,7 @@ export const generateRootMetadata = async (): Promise<Metadata> => {
     description: appConfig.description,
     metadataBase: new URL(appConfig.url),
     applicationName: appConfig.name,
-    manifest: "/manifest.json",
+    manifest: "/manifest.webmanifest",
     keywords: [
       "Next.js",
       "React",

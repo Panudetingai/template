@@ -1,18 +1,24 @@
 import type { NextConfig } from "next";
-import withPWAInit from "next-pwa";
-
-const withPWA = withPWAInit({
-  dest: "public",
-  disable: process.env.NODE_ENV === "development",
-  register: true,
-  scope: "/",
-  sw: "sw.js",
-});
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
-
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/javascript; charset=utf-8",
+          },
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
@@ -25,4 +31,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(nextConfig);
+export default nextConfig;

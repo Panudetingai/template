@@ -1,4 +1,5 @@
 import { AuthErrorHandler } from "@/components/auth-error-handler";
+import { PWARegister } from "@/components/pwa-register";
 import { Toaster } from "@/components/ui/sonner";
 import { generateRootMetadata } from "@/configs/meta.config";
 import QueryProvider from "@/providers/query-provider";
@@ -19,9 +20,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.className} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
+        <PWARegister />
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
@@ -39,5 +41,5 @@ export default function RootLayout({
 export const generateMetadata = generateRootMetadata;
 
 export const viewport = {
-  themeColor: "#8936FF",
+  themeColor: "#ffffff",
 };
