@@ -26,7 +26,6 @@ export function OgImageBasic(raw: Partial<CardBasicProps> = {}) {
   const body = raw.body ?? defaults.body;
   const codeHighlight = raw.codeHighlight ?? defaults.codeHighlight;
   const quote = raw.quote ?? defaults.quote;
-  const username = raw.username ?? defaults.username;
   const footerTag = raw.footerTag ?? defaults.footerTag;
   const brandLine = raw.brandLine ?? defaults.brandLine;
 
@@ -133,7 +132,6 @@ export function OgImageBasic(raw: Partial<CardBasicProps> = {}) {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ fontSize: 28, fontWeight: 600 }}>{username}</div>
           <div
             style={{
               fontSize: 20,
