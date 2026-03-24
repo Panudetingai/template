@@ -1,4 +1,4 @@
-import type { CardBasicProps } from "@/module/storys/cards-social/aesthetic/card-basic";
+import type { CardBasicProps } from "@/module/stories/cards-social/aesthetic/card-basic";
 import { z } from "zod";
 
 /**

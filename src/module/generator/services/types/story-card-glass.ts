@@ -1,4 +1,4 @@
-import type { CardGlassComingProps } from "@/module/storys/cards-social/aesthetic/card-glass-coming";
+import type { CardGlassComingProps } from "@/module/stories/cards-social/aesthetic/card-glass-coming";
 import { z } from "zod";
 
 /**
