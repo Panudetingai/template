@@ -33,14 +33,18 @@ export function StoryShareActions({
       toast.error("ไม่พบพื้นที่สำหรับส่งออก");
       return null;
     }
+    await document.fonts.ready;
     const w = el.offsetWidth;
     if (w < 1) return null;
     const pixelRatio = Math.min(targetWidth / w, 4);
     const dataUrl = await toPng(el, {
-      pixelRatio,
+      pixelRatio: pixelRatio * 3,
       cacheBust: true,
       backgroundColor,
       skipFonts: true,
+      style: {
+        fontFamily: "Inter, sans-serif",
+      }
     });
     return dataUrl;
   }, [exportRef, targetWidth, backgroundColor]);
@@ -55,6 +59,8 @@ export function StoryShareActions({
   const onDownload = useCallback(async () => {
     setBusy(true);
     try {
+      await document.fonts.ready;
+
       const dataUrl = await capture();
       if (!dataUrl) return;
       triggerDownload(dataUrl);

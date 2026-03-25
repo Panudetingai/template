@@ -45,7 +45,7 @@ export const CardGlassComing = forwardRef<HTMLDivElement, CardGlassComingProps>(
           : "h-full min-h-0 w-full",
         className,
       )}
-        style={{ backgroundColor: BG, color: "#fff" }}
+        style={{ backgroundColor: BG, color: "#fff", fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}
       >
         {/* Glass panels */}
         <div
@@ -101,7 +101,7 @@ export const CardGlassComing = forwardRef<HTMLDivElement, CardGlassComingProps>(
           className="absolute right-[4%] bottom-[6%] z-10 max-w-[48%] text-right text-[length:clamp(0.45rem,2.8cqw,0.65rem)] leading-snug font-medium tracking-wide uppercase"
           style={{ color: MUTED }}
         >
-          {bottomRight}
+          @dayily.ai
         </p>
       </div>
     );
