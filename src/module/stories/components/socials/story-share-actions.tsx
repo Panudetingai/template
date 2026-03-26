@@ -115,20 +115,20 @@ export function StoryShareActions({
         await navigator.share({
           files: [file],
           title: "Dayily Story",
-          text: "แชร์จาก Dayily",
+          text: "Share from Dayily Story",
         });
-        toast.success("เปิดตัวเลือกแชร์แล้ว");
+        toast.success("Open share options");
         return;
       }
 
       triggerDownload(dataUrl);
       toast.message(
-        "เบราว์เซอร์นี้ไม่รองรับแชร์ไฟล์โดยตรง — ดาวน์โหลดให้แล้ว นำไปอัปโหลดในแอป Story ได้เลย",
+        "This browser does not support sharing files directly — download it and upload it to the Story app",
       );
     } catch (e) {
       if ((e as Error).name === "AbortError") return;
       console.error(e);
-      toast.error("แชร์ไม่สำเร็จ — ลองดาวน์โหลดแทน");
+      toast.error("Share failed — try downloading instead");
     } finally {
       setBusy(false);
     }
@@ -142,7 +142,7 @@ export function StoryShareActions({
       )}
     >
       <p className="text-muted-foreground w-full text-xs sm:mr-auto sm:w-auto">
-        บันทึกเป็น PNG แล้วแชร์ไป Instagram / TikTok / Facebook Stories
+        Save as PNG and share to Instagram / TikTok / Facebook Stories
       </p>
       <Button
         type="button"
@@ -152,7 +152,7 @@ export function StoryShareActions({
         onClick={onShare}
       >
         <Share2 className="size-4" />
-        แชร์
+        Share
       </Button>
       <Button
         type="button"
@@ -162,7 +162,7 @@ export function StoryShareActions({
         onClick={onDownload}
       >
         <Download className="size-4" />
-        ดาวน์โหลด PNG
+        Download PNG
       </Button>
     </div>
   );

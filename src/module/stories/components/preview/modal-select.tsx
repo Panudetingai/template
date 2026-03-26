@@ -64,10 +64,10 @@ function ModalSelectInner({ templateId }: { templateId: StoryCardTemplateId }) {
     >
       <div className="shrink-0 space-y-0.5 text-center sm:text-left">
         <h2 className="text-foreground text-lg font-semibold sm:text-xl">
-          เลือกเทมเพลต Story Card
+          Select Story Card Template
         </h2>
         <p className="text-muted-foreground text-xs sm:text-sm">
-          เลื่อนดูพรีวิว แล้วกดยืนยัน
+          Scroll to preview and click confirm
         </p>
       </div>
 

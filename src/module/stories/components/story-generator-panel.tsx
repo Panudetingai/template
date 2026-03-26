@@ -109,7 +109,7 @@ export function StoryGeneratorPanel() {
         throw new Error("เลือก repository และ commit อย่างน้อยหนึ่งรายการ");
       }
       if (template.aiKind === "none") {
-        throw new Error("เทมเพลตนี้ยังไม่มี AI — เลือก Wrapped หรือ Glass");
+        throw new Error("This template does not have AI — select Wrapped or Glass");
       }
 
       const body = {
@@ -306,7 +306,7 @@ export function StoryGeneratorPanel() {
               <>
                 <div className="flex items-center justify-between gap-2">
                   <Badge variant="outline" className="font-normal">
-                    {selectedCommits.length} / {commits?.length ?? 0} เลือก
+                    {selectedCommits.length} / {commits?.length ?? 0} Selected
                   </Badge>
                   <div className="flex gap-2">
                     <Button

@@ -1,8 +1,8 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { StoryCanvasFrame } from "@/module/stories/components/socials/story-canvas-frame";
 import type { StoryCanvasPreset } from "@/module/stories/components/socials/story-canvas-presets";
-import { cn } from "@/lib/utils";
 import type { ElementType } from "react";
 
 type StorySocialCardProps = {
