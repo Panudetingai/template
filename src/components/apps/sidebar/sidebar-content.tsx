@@ -1,6 +1,7 @@
 import routerConfig from "@/configs/route.config";
 import {
   BookIcon,
+  BrainIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
   LucideIcon,
@@ -42,6 +43,12 @@ const sidebarItems: groupItems[] = [
         icon: LayoutDashboardIcon,
         role: ["pro", "team", "free"],
         href: routerConfig.app.Repositorie,
+      },
+      {
+        label: "Classifier",
+        icon: BrainIcon,
+        role: ["pro", "team", "free"],
+        href: routerConfig.app.Classifier,
       },
       {
         label: "Generate",

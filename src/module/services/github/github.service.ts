@@ -5,11 +5,15 @@ import { eq } from "drizzle-orm";
 import { Octokit } from "octokit";
 import { cache } from "react";
 import { githubAccessTokens } from "../../../../drizzle/schema";
+import type { Endpoints } from "@octokit/types";
 import {
   PullRequestParameters,
   pullRequestsFilterParameters,
   RestEndpointMethodTypes,
 } from "../types";
+
+type RepoCommitListItem =
+  Endpoints["GET /repos/{owner}/{repo}/commits"]["response"]["data"][number];
 class GithubService {
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -139,6 +143,111 @@ class GithubService {
       return pullRequestFiles.data;
     },
   );
+
+  /**
+   * รายการ PR ของ repo (ใช้กับ classifier / วิเคราะห์กิจกรรม)
+   */
+  public getRepositoryPullRequests = cache(
+    async ({
+      owner,
+      repoName,
+    }: {
+      owner: string;
+      repoName: string;
+    }) => {
+      const octokit = await this.getUserProviderToken();
+      const { data } = await octokit.rest.pulls.list({
+        owner,
+        repo: repoName,
+        state: "all",
+        per_page: 100,
+        sort: "updated",
+        direction: "desc",
+      });
+      return data;
+    },
+  );
+
+  /**
+   * Commits พร้อม stats (additions/deletions) สำหรับ classifier — ดึงจาก GitHub จริง
+   */
+  public async getRepositoryCommitsWithStats({
+    owner,
+    repoName,
+    since,
+    until,
+    maxCommits = 40,
+  }: {
+    owner: string;
+    repoName: string;
+    since?: string;
+    until?: string;
+    maxCommits?: number;
+  }) {
+    const octokit = await this.getUserProviderToken();
+    const { data: list } = await octokit.rest.repos.listCommits({
+      owner,
+      repo: repoName,
+      since,
+      until,
+      per_page: maxCommits,
+    });
+    const slice = list.slice(0, maxCommits);
+    const detailed = await Promise.all(
+      slice.map(async (item) => {
+        const { data } = await octokit.rest.repos.getCommit({
+          owner,
+          repo: repoName,
+          ref: item.sha!,
+        });
+        return data;
+      }),
+    );
+    return detailed;
+  }
+
+  /**
+   * Commits ในช่วง since–until (ใช้ listCommits แบบ paginate ไม่เรียก getCommit ต่อตัว)
+   */
+  public async getRepositoryCommitsInDateRange({
+    owner,
+    repoName,
+    since,
+    until,
+    maxPages = 25,
+  }: {
+    owner: string;
+    repoName: string;
+    since: string;
+    until: string;
+    maxPages?: number;
+  }) {
+    const octokit = await this.getUserProviderToken();
+    const sinceMs = new Date(since).getTime();
+    const untilMs = new Date(until).getTime();
+    const out: RepoCommitListItem[] = [];
+    for (let page = 1; page <= maxPages; page++) {
+      const { data } = await octokit.rest.repos.listCommits({
+        owner,
+        repo: repoName,
+        since,
+        per_page: 100,
+        page,
+      });
+      if (data.length === 0) break;
+      for (const c of data) {
+        const dateStr =
+          c.commit.author?.date ?? c.commit.committer?.date ?? null;
+        if (!dateStr) continue;
+        const t = new Date(dateStr).getTime();
+        if (t >= sinceMs && t <= untilMs) {
+          out.push(c);
+        }
+      }
+      if (data.length < 100) break;
+    }
+    return out;
+  }
 }
 
 export const githubService = async () => {

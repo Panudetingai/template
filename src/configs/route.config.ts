@@ -12,6 +12,7 @@ const routerConfigSchema = z.object({
     app: z.object({
         Repositorie: z.string().min(1),
         Generator: z.string().min(1),
+        Classifier: z.string().min(1),
         Posts: z.string().min(1),
         Stories: z.string().min(1),
         Notifications: z.string().min(1),
@@ -34,6 +35,7 @@ const routerConfig = routerConfigSchema.parse({
     },
     app: {
         Repositorie: "/repositorie",
+        Classifier: "/classifier",
         Generator: "/generator",
         Posts: "/posts",
         Stories: "/stories",

@@ -11,8 +11,8 @@ import useModalStore from "../../stores/use-modal";
 import { useStoryGeneratorStore } from "../../stores/use-story-generator";
 import { StorySocialCard } from "../socials/story-social-card";
 import {
-    STORY_CARD_TEMPLATES,
-    type StoryCardTemplateId,
+  STORY_CARD_TEMPLATES,
+  type StoryCardTemplateId,
 } from "../story-card-templates";
 
 /** จำกัดความกว้างพรีวิวให้สูง 9:16 ไม่เกิน (100dvh - ช่อง chrome) — พอดีจอโดยไม่ scroll */
@@ -158,11 +158,11 @@ function ModalSelectInner({ templateId }: { templateId: StoryCardTemplateId }) {
 
       <div className="flex shrink-0 flex-col gap-2 pt-1 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={() => setModal(null)}>
-          ยกเลิก
+          Cancel
         </Button>
         <Button type="button" onClick={handleConfirm}>
           <CheckIcon className="size-4" />
-          ใช้เทมเพลตนี้
+          Use this template
         </Button>
       </div>
     </motion.div>

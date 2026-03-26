@@ -1,13 +1,13 @@
 import routerConfig from "@/configs/route.config";
 import type { LucideIcon } from "lucide-react";
 import {
+  BrainIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
-  MessageCircleIcon,
   SettingsIcon,
   SparklesIcon,
   UserIcon,
-  ZapIcon,
+  ZapIcon
 } from "lucide-react";
 
 export type NavItem = {
@@ -22,13 +22,12 @@ export const mainNavItems: NavItem[] = [
     icon: LayoutDashboardIcon,
     href: routerConfig.app.Repositorie,
   },
-  { label: "Generate", icon: SparklesIcon, href: "/generator" },
-  { label: "Post", icon: MessageCircleIcon, href: "/post" },
   {
-    label: "Settings",
-    icon: SettingsIcon,
-    href: routerConfig.app.Settings,
+    label: "Classifier",
+    icon: BrainIcon,
+    href: routerConfig.app.Classifier,
   },
+  { label: "Generate", icon: SparklesIcon, href: routerConfig.app.Generator },
   { label: "Integrations", icon: ZapIcon, href: routerConfig.app.Integrations },
 ];
 
