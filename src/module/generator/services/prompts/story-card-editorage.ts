@@ -21,8 +21,6 @@ ${params.userPrompt?.trim() || ""}
 ## Rules
 - titleWhite: one angle from ONE commit story — 3 short chunks (line1, line2, line3), punchy, EN or TH mixed OK.
 - titleGreen: one angle from ONE commit story — 3 short chunks (line1, line2, line3), punchy, EN or TH mixed OK.
-- authorName: one angle from ONE commit story — 3 short chunks (line1, line2, line3), punchy, EN or TH mixed OK.
-- authorRole: one angle from ONE commit story — 3 short chunks (line1, line2, line3), punchy, EN or TH mixed OK.
 - footerLine1: one angle from ONE commit story — 3 short chunks (line1, line2, line3), punchy, EN or TH mixed OK.
 - footerLine2: one angle from ONE commit story — 3 short chunks (line1, line2, line3), punchy, EN or TH mixed OK.
 `;
