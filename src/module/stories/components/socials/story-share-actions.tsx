@@ -2,10 +2,36 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { toPng } from "html-to-image";
+import { getFontEmbedCSS, toPng } from "html-to-image";
 import { Download, Share2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+
+/**
+ * สำรองเมื่อ getFontEmbedCSS ว่าง — ฝัง Inter จาก public (ชื่อครอบครัว "Inter")
+ * ไม่แทนที่ @font-face ของ next/font โดยตรง
+ */
+function getInterFallbackFontEmbedCSS(): string {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "";
+  const normal = `${origin}/fonts/Inter/Inter-VariableFont_opsz,wght.ttf`;
+  const italic = `${origin}/fonts/Inter/Inter-Italic-VariableFont_opsz,wght.ttf`;
+  return `
+@font-face {
+  font-family: "Inter";
+  src: url("${normal}") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("${italic}") format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}`.trim();
+}
 
 type StoryShareActionsProps = {
   exportRef: React.RefObject<HTMLElement | null>;
@@ -37,14 +63,17 @@ export function StoryShareActions({
     const w = el.offsetWidth;
     if (w < 1) return null;
     const pixelRatio = Math.min(targetWidth / w, 4);
+    // ดึง @font-face จากสไตล์ชีตจริง (รวมชื่อครอบครัวแบบ scoped ของ next/font)
+    // อย่าแทนที่ด้วยแค่ "Inter" อย่างเดียว — จะไม่ตรงกับที่หน้า render
+    let fontEmbedCSS = await getFontEmbedCSS(el, { cacheBust: true });
+    if (!fontEmbedCSS.trim()) {
+      fontEmbedCSS = getInterFallbackFontEmbedCSS();
+    }
     const dataUrl = await toPng(el, {
       pixelRatio: pixelRatio * 3,
       cacheBust: true,
       backgroundColor,
-      skipFonts: true,
-      style: {
-        fontFamily: "Inter, sans-serif",
-      }
+      fontEmbedCSS,
     });
     return dataUrl;
   }, [exportRef, targetWidth, backgroundColor]);

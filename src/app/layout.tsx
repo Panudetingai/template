@@ -10,6 +10,7 @@ import "./globals.css";
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
 });
 
 export default function RootLayout({
@@ -18,7 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.className} h-full antialiased`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${inter.className} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col">
         <PWARegister />
         <ThemeProvider

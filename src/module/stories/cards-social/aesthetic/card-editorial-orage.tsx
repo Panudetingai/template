@@ -1,8 +1,7 @@
 "use client";
 
-import useUsers from "@/lib/supabase/hooks/use-users";
 import { cn } from "@/lib/utils";
-import { ArrowRight, UserIcon } from "lucide-react"; // อย่าลืมลง lucide-react นะครับ
+import { ArrowRight } from "lucide-react"; // อย่าลืมลง lucide-react นะครับ
 import { forwardRef } from "react";
 
 const BG_DARK = "#0a0a0a";
@@ -13,8 +12,6 @@ export type CardEditorialOrageProps = {
   layout?: "standalone" | "canvas";
   titleWhite?: string;    // ส่วนที่เป็นสีขาว (EVER HEARD ABOUT)
   titleGreen?: string;    // ส่วนที่เป็นสีเขียว (MICRO STORY-TELLING?)
-  authorName?: string;
-  authorRole?: string;
   footerLine1?: string;
   footerLine2?: string;
 };
@@ -29,15 +26,12 @@ export const CardEditorialOrage = forwardRef<
     layout = "standalone",
     titleWhite = "EVER\nHEARD\nABOUT",
     titleGreen = "MICRO\nSTORY-\nTELLING?",
-    authorName = "Zorain Shahzad",
-    authorRole = "Personal Branding Coach\nBrand Strategist",
     footerLine1 = "DAYILY • 2025",
     footerLine2 = "THAILAND",
   },
   ref,
 ) {
-    const {user_metadata} = useUsers();
-  return (
+      return (
     <div
       ref={ref}
       className={cn(
@@ -49,21 +43,6 @@ export const CardEditorialOrage = forwardRef<
       )}
       style={{ backgroundColor: BG_DARK, color: "#ffffff" }}
     >
-      {/* 1. Header Section: Profile & Socials */}
-      <div className="absolute top-[6%] left-[6%] right-[6%] z-10 flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          {/* Profile Circle - จำลองจากรูป */}
-          <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden">
-            {user_metadata?.avatar_url ? <img src={user_metadata?.avatar_url} alt="profile" /> : <UserIcon className="size-8 text-zinc-400" />}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[12px] font-bold leading-none">{user_metadata?.full_name}</span>
-            <span className="text-[9px] text-zinc-400 whitespace-pre-line leading-tight mt-1">
-              {user_metadata?.email}
-            </span>
-          </div>
-        </div>
-      </div>
 
       {/* 2. Main Typography Section */}
       <div className="relative z-10 flex flex-1 flex-col justify-center px-[8%] pt-[10%]">
