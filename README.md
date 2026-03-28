@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# template — เทมเพลตเว็บแอป (Next.js)
 
-## Getting Started
+โปรเจกต์นี้เป็นเว็บแอปที่สร้างด้วย **Next.js** มีหน้าเข้าสู่ระบบ แถบเมนูด้านข้าง และเชื่อมต่อ **Supabase** (ฐานข้อมูล / auth) รวมถึงใช้ **Groq** สำหรับฟีเจอร์ AI
 
-First, run the development server:
+---
+
+## สิ่งที่ต้องมีก่อนเริ่ม
+
+- **Node.js** (เวอร์ชันที่รองรับ Next.js 16 — ดูที่ [เอกสาร Next.js](https://nextjs.org/docs) ได้)
+- **npm** (หรือใช้ `pnpm` / `yarn` แทนได้ตามที่คุณถนัด)
+
+---
+
+## ติดตั้งและรันในเครื่อง
+
+### 1. ติดตั้งแพ็กเกจ
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install && bun install 
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. ตั้งค่าตัวแปรสภาพแวดล้อม
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+คัดลอกไฟล์ตัวอย่างแล้วแก้ค่าให้ตรงกับโปรเจกต์ของคุณ:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env.local
+```
 
-## Learn More
+จากนั้นเปิด `.env.local` แล้วกรอกอย่างน้อย:
 
-To learn more about Next.js, take a look at the following resources:
+| หมวด | คำอธิบายสั้นๆ |
+|------|----------------|
+| **Supabase** | URL, key, และข้อมูลเชื่อมต่อฐานข้อมูล (ตามที่ได้จาก [Supabase Dashboard](https://supabase.com/dashboard)) |
+| **GROQ_API_KEY** | ใช้กับฟีเจอร์ AI — สร้างได้ที่ [Groq Console](https://console.groq.com/) |
+| **NEXT_PUBLIC_*** | ค่าที่เบราว์เซอร์ต้องรู้ (ชื่อแอป, URL ฐาน API ฯลฯ) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+รายละเอียดชื่อตัวแปรทั้งหมดดูได้ใน `.env.example`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. รันโหมดพัฒนา
 
-## Deploy on Vercel
+```bash
+npm run dev && bun run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+เปิดเบราว์เซอร์ที่ [http://localhost:3000](http://localhost:3000)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## คำสั่งที่ใช้บ่อย
+
+| คำสั่ง | ทำอะไร |
+|--------|--------|
+| `npm run dev` | รันเซิร์ฟเวอร์พัฒนา (hot reload) |
+| `npm run build` | สร้าง production build |
+| `npm run start` | รันแอปหลัง build แล้ว |
+| `npm run lint` | ตรวจโค้ดด้วย ESLint |
+
+---
+
+## โครงสร้างโฟลเดอร์หลัก (สั้นๆ)
+
+- `src/app/` — หน้าเว็บและ routing (App Router)
+- `src/components/` — คอมโพเนนต์ UI และ layout
+- `src/lib/` — ช่วยเชื่อม Supabase, Drizzle, Elysia client ฯลฯ
+- `src/module/` — โมดูลเฉพาะ เช่น auth
+- `src/services/` — บริการภายนอก (GitHub, LLM/Groq ฯลฯ)
+
+---
+
+## เอกสารเพิ่มเติม
+
+- [Next.js Documentation](https://nextjs.org/docs)
+
+หมายเหตุ: เวอร์ชัน Next.js ในโปรเจกต์นี้อาจมี API หรือโครงสร้างไฟล์ต่างจากที่คุ้น — ถ้าจะแก้ routing หรือ server components ควรดูเอกสารใน `node_modules/next/dist/docs/` ตามที่โปรเจกต์แนะนำ
