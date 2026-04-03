@@ -1,5 +1,7 @@
 import { createGroq } from "@ai-sdk/groq";
 import { NextRequest } from "next/server";
+
+import { serverEnv } from "@/env/server";
 import { GenerateParameters } from "../llm.service";
 import { AgentsService } from "./agents/agents.service";
 import { OCRService, OCRSlipResult } from "./agents/ocr.service";
@@ -34,7 +36,7 @@ class GroqService {
         this.baseUrl = config.baseUrl;
 
         const apiKey =
-            getXApiKey(config.headers) ?? process.env.GROQ_API_KEY;
+            getXApiKey(config.headers) ?? serverEnv.GROQ_API_KEY;
 
         // Validate the API Key is provided
         if (!apiKey) {

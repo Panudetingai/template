@@ -1,3 +1,4 @@
+import { publicEnv } from "@/env/public";
 import { db } from "@/lib/drizzle";
 import { createClient } from "@/lib/supabase/server";
 import type { UserIdentity } from "@supabase/supabase-js";
@@ -41,7 +42,7 @@ const auth = new Elysia()
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
+          redirectTo: `${publicEnv.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
           scopes: providerScopes,
         },
       });
@@ -61,7 +62,7 @@ const auth = new Elysia()
     const supabase = await createClient();
     const callbackParams = new URLSearchParams({ identity: provider });
     if (next) callbackParams.set("next", next);
-    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback?${callbackParams.toString()}`;
+    const redirectTo = `${publicEnv.NEXT_PUBLIC_APP_URL}/api/auth/callback?${callbackParams.toString()}`;
     const { data, error } = await supabase.auth.linkIdentity({
       provider,
       options: {

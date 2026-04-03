@@ -1,5 +1,7 @@
 import { createGroq } from "@ai-sdk/groq";
 
+import { serverEnv } from "@/env/server";
+
 export enum LLMProvider {
     GROQ = "groq",
     OPENAI = "openai",
@@ -27,7 +29,7 @@ class LLMProviderService {
 
     private async groqProvider() {
         const groq = createGroq({
-            apiKey: process.env.GROQ_API_KEY! as string,
+            apiKey: serverEnv.GROQ_API_KEY ?? "",
         });
         return groq
     }
