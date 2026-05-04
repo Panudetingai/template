@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import useIdentities from "@/stores/use-Identities";
-import { Github } from "@lobehub/icons";
+import { Hotel } from "lucide-react";
 import Image from "next/image";
 import { useEffect } from "react";
 import {
@@ -89,12 +89,12 @@ export default function SidebarHeaderComponent() {
                   onClick={handleLinkProviderGithub}
                 >
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
-                    <Github.Avatar size={24} />
+                    <Hotel className="size-4 text-muted-foreground" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Github</span>
+                    <span className="truncate font-semibold">Organization</span>
                     <span className="truncate text-xs">
-                      Connect with Github
+                      Create or join an organization
                     </span>
                   </div>
                 </SidebarMenuButton>

@@ -16,7 +16,7 @@ export default function AppPageLayout({ children }: LayoutProps) {
       <SidebarComponent />
       <SidebarInset className="flex min-h-svh flex-col p-4 pb-20 md:pb-4">
         <MainHeader />
-        <main className="flex-1 w-full mt-4 max-w-4xl mx-auto">{children}</main>
+        <main className="flex-1 w-full mt-4 max-w-7xl mx-auto">{children}</main>
       </SidebarInset>
       <MobileBottomNav />
     </SidebarProvider>

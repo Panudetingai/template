@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { publicEnv } from "@/env/public";
 
-const AUTH_COOKIE_NAME = `${publicEnv.NEXT_PUBLIC_COOKIE_PREFIX}-${publicEnv.NEXT_PUBLIC_SUPABASE_PROJECT_REF}-auth-token`;
+import { serverEnv } from "@/env/server";
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -16,7 +16,7 @@ export async function updateSession(request: NextRequest) {
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookieOptions: {
-        name: AUTH_COOKIE_NAME,
+        name: `${serverEnv.COOKIE_PREFIX}-supabase-auth-token`,
       },
       cookies: {
         getAll() {

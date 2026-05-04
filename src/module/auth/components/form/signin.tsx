@@ -1,5 +1,6 @@
 "use client";
 
+import { publicEnv } from "@/env/public";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,12 +19,10 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import appConfig from "@/configs/app.config";
-import { api } from "@/lib/elysia/eden-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Github, Google } from "@lobehub/icons";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -45,7 +44,6 @@ export const SignInSchema = z.object({
 export type SignInSchemaType = z.infer<typeof SignInSchema>;
 
 export default function SignInForm() {
-  const router = useRouter();
   const form = useForm<SignInSchemaType>({
     resolver: zodResolver(SignInSchema),
     defaultValues: {
@@ -56,15 +54,40 @@ export default function SignInForm() {
 
   const { mutate: handleProvider } = useMutation({
     mutationFn: async (provider: "google" | "github") => {
-      const response = await api.auth.provider.post({ provider });
-      if (response.error) {
+      const res = await fetch(
+        `${publicEnv.NEXT_PUBLIC_API_URL}/api/auth/provider`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider }),
+        },
+      );
+      const text = await res.text();
+      let data: { url?: string; message?: string } = {};
+      if (text) {
+        try {
+          data = JSON.parse(text) as { url?: string; message?: string };
+        } catch {
+          form.setError("root.serverError", {
+            message: "เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON ที่ถูกต้อง",
+          });
+          return;
+        }
+      }
+      if (!res.ok) {
         form.setError("root.serverError", {
-          message: response.error.value.message as string,
+          message: data.message ?? `OAuth ล้มเหลว (${res.status})`,
         });
         return;
       }
-      router.push(response.data.url);
-      return;
+      if (!data.url) {
+        form.setError("root.serverError", {
+          message: data.message ?? "ไม่ได้รับ URL สำหรับ OAuth",
+        });
+        return;
+      }
+      window.location.assign(data.url);
     },
   });
 

@@ -16,7 +16,7 @@ export default function Home() {
             work in progress and will be updated soon.
           </p>
           <Button className="w-26 mt-4">
-            <Link href={routerConfig.app.Repositorie} className="flex items-center gap-2">
+            <Link href={routerConfig.app.Dashboard} className="flex items-center gap-2">
               Try it out <ArrowRightIcon className="size-4" />
             </Link>
           </Button>

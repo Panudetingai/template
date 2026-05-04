@@ -1,8 +1,8 @@
 import { createBrowserClient } from '@supabase/ssr'
 
 import { publicEnv } from "@/env/public";
+import { serverEnv } from '@/env/server';
 
-const AUTH_COOKIE_NAME = `${publicEnv.NEXT_PUBLIC_COOKIE_PREFIX}-${publicEnv.NEXT_PUBLIC_SUPABASE_PROJECT_REF}-auth-token`
 
 export function createClient() {
   return createBrowserClient(
@@ -10,7 +10,7 @@ export function createClient() {
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookieOptions: {
-        name: AUTH_COOKIE_NAME,
+        name: `${serverEnv.COOKIE_PREFIX}-supabase-auth-token`,
       },
     }
   )

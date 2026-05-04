@@ -1,4 +1,4 @@
-import { api } from "@/lib/elysia/eden-client";
+import { publicEnv } from "@/env/public";
 
 export const handleLinkProvider = async (
   provider: "github",
@@ -6,38 +6,65 @@ export const handleLinkProvider = async (
 ) => {
   const path =
     next ?? (typeof window !== "undefined" ? window.location.pathname : "/");
-  const response = await api.auth["link-provider"].post({
-    provider,
-    next: path,
-  });
-  if (response.error) {
-    const msg =
-      typeof response.error === "object" &&
-      response.error &&
-      "message" in response.error
-        ? (response.error as { message: string }).message
-        : String(response.error);
-    return { error: msg };
+  const res = await fetch(
+    `${publicEnv.NEXT_PUBLIC_API_URL}/api/auth/link-provider`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, next: path }),
+    },
+  );
+  const text = await res.text();
+  let data: { url?: string; message?: string } = {};
+  if (text) {
+    try {
+      data = JSON.parse(text) as { url?: string; message?: string };
+    } catch {
+      return { error: "เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON ที่ถูกต้อง" };
+    }
   }
-  window.location.href = response.data.url;
+  if (!res.ok) {
+    return { error: data.message ?? `ลิงก์บัญชีล้มเหลว (${res.status})` };
+  }
+  if (!data.url) {
+    return { error: data.message ?? "ไม่ได้รับ URL สำหรับ OAuth" };
+  }
+  window.location.href = data.url;
   return { success: true };
 };
 
 export const handleUnlinkProvider = async (
   provider: "github",
 ): Promise<{ error?: string }> => {
-  const response = await api.auth["unlink-provider"].post({ provider });
-  if (response.error) {
-    const msg =
-      typeof response.error === "object" &&
-      response.error &&
-      "message" in response.error
-        ? (response.error as { message: string }).message
-        : "Failed to unlink";
-    return { error: msg };
+  const res = await fetch(
+    `${publicEnv.NEXT_PUBLIC_API_URL}/api/auth/unlink-provider`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider }),
+    },
+  );
+  const text = await res.text();
+  let data: unknown = {};
+  if (text) {
+    try {
+      data = JSON.parse(text) as unknown;
+    } catch {
+      return { error: "เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON ที่ถูกต้อง" };
+    }
   }
-  if (response.data && "error" in response.data) {
-    return { error: (response.data as { error: string }).error };
+  const body = data as {
+    error?: string;
+    status?: number;
+    success?: boolean;
+  };
+  if (body.error) {
+    return { error: body.error };
+  }
+  if (!res.ok) {
+    return { error: `ยกเลิกการเชื่อมล้มเหลว (${res.status})` };
   }
   window.location.reload();
   return {};

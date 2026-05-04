@@ -8,6 +8,34 @@
       "when": 1774017691201,
       "tag": "0000_woozy_dragon_lord",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777106364081,
+      "tag": "0001_stiff_rocket_racer",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777112155507,
+      "tag": "0002_nosy_typhoid_mary",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777459291570,
+      "tag": "0003_simple_mauler",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777876004675,
+      "tag": "0004_tiktok_integration",
+      "breakpoints": true
     }
   ]
 }

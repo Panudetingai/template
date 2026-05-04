@@ -28,13 +28,30 @@ const publicEnvSchema = z
       .min(1, "Set NEXT_PUBLIC_SUPABASE_PROJECT_REF in your environment file."),
     NEXT_PUBLIC_SUPABASE_URL: z
       .string()
-      .url("Set NEXT_PUBLIC_SUPABASE_URL in your environment file."),
+      .url("Set NEXT_PUBLIC_SUPABASE_URL to a valid URL in your environment file.")
+      .transform((s) => {
+        const t = s.trim().replace(/\/+$/, "");
+        try {
+          const u = new URL(t);
+          // Hosted Supabase requires HTTPS; http:// often returns empty/non-JSON → AuthUnknownError parsing token response.
+          if (u.protocol === "http:" && u.hostname.endsWith(".supabase.co")) {
+            return `https://${u.hostname}${u.pathname === "/" ? "" : u.pathname}`.replace(
+              /\/+$/,
+              "",
+            );
+          }
+        } catch {
+          /* .url() already validated shape */
+        }
+        return t;
+      }),
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
       .string()
-      .min(1, "Set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in your environment file."),
+      .min(1, "Set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in your environment file.")
+      .transform((s) => s.trim()),
     NEXT_PUBLIC_API_URL: z
       .string()
-      .url("Set NEXT_PUBLIC_API_URL in your environment file."),
+      .url("Set NEXT_PUBLIC_API_URL to a valid URL in your environment file."),
     NEXT_PUBLIC_SUPABASE_DATABASE_URL: z
       .string()
       .min(1, "Set NEXT_PUBLIC_SUPABASE_DATABASE_URL in your environment file."),

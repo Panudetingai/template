@@ -4,7 +4,6 @@ import { cookies } from 'next/headers';
 import { publicEnv } from '@/env/public';
 import { serverEnv } from '@/env/server';
 
-const AUTH_COOKIE_NAME = `${serverEnv.COOKIE_PREFIX}-${publicEnv.NEXT_PUBLIC_SUPABASE_PROJECT_REF}-auth-token`
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -16,7 +15,12 @@ export async function createClient() {
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookieOptions: {
-        name: AUTH_COOKIE_NAME,
+        name: `${serverEnv.COOKIE_PREFIX}-supabase-auth-token`,
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        flowType: "pkce"
       },
       cookies: {
         getAll() {

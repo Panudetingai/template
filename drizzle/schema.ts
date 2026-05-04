@@ -1,86 +1,14 @@
 import { sql } from "drizzle-orm"
-import { boolean, foreignKey, integer, pgEnum, pgPolicy, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core"
+import { foreignKey, integer, jsonb, pgEnum, pgPolicy, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core"
 
 export const activityType = pgEnum("activity_type", ['push', 'pull_request', 'issue', 'commit'])
 export const plan = pgEnum("plan", ['free', 'pro', 'enterprise'])
 export const platform = pgEnum("platform", ['twitter', 'x', 'reddit', 'facebook', 'instagram', 'linkedin', 'other'])
 export const subscriptionsPlan = pgEnum("subscriptions_plan", ['pro', 'team'])
 export const subscriptionsStatus = pgEnum("subscriptions_status", ['pending', 'active', 'cancelled', 'expired', 'trial', 'paused', 'inactive'])
-
-
-export const postShares = pgTable("post_shares", {
-	shareId: uuid("share_id").defaultRandom().primaryKey().notNull(),
-	postId: uuid("post_id"),
-	userId: uuid("user_id"),
-	instagram: platform(),
-	utmSource: varchar("utm_source", { length: 255 }).default(''),
-	clickCount: integer("click_count").default(0),
-	sharedAt: timestamp("shared_at", { mode: 'string' }).defaultNow(),
-}, (table) => [
-	uniqueIndex("idx_post_shares_post_id").using("btree", table.postId.asc().nullsLast().op("uuid_ops")),
-	uniqueIndex("idx_post_shares_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.postId],
-			foreignColumns: [generatedPosts.postId],
-			name: "post_shares_post_id_generated_posts_post_id_fk"
-		}),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "post_shares_user_id_users_id_fk"
-		}),
-	pgPolicy("policy_Update_Post_Shares", { as: "permissive", for: "update", to: ["public"] }),
-	pgPolicy("policy_Delete_Post_Shares", { as: "permissive", for: "delete", to: ["public"] }),
-	pgPolicy("policy_Select_Post_Shares", { as: "permissive", for: "select", to: ["public"] }),
-	pgPolicy("policy_Insert_Post_Shares", { as: "permissive", for: "insert", to: ["public"] }),
-]);
-
-export const referrals = pgTable("referrals", {
-	referralId: uuid("referral_id").defaultRandom().primaryKey().notNull(),
-	referrerId: uuid("referrer_id"),
-	referredId: uuid("referred_id"),
-	rewardGiven: boolean("reward_given").default(false),
-	rewardGivenAt: timestamp("reward_given_at", { mode: 'string' }).defaultNow(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
-}, (table) => [
-	uniqueIndex("idx_referrer_id_referred_id").using("btree", table.referrerId.asc().nullsLast().op("uuid_ops"), table.referredId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.referredId],
-			foreignColumns: [users.id],
-			name: "referrals_referred_id_users_id_fk"
-		}),
-	foreignKey({
-			columns: [table.referrerId],
-			foreignColumns: [users.id],
-			name: "referrals_referrer_id_users_id_fk"
-		}),
-	pgPolicy("policy_Select_Referrals", { as: "permissive", for: "select", to: ["public"] }),
-	pgPolicy("policy_Insert_Referrals", { as: "permissive", for: "insert", to: ["public"] }),
-]);
-
-export const githubActivity = pgTable("github_activity", {
-	activityId: uuid("activity_id").defaultRandom().primaryKey().notNull(),
-	userId: uuid("user_id"),
-	repoName: varchar("repo_name", { length: 255 }).notNull(),
-	push: activityType(),
-	title: varchar({ length: 255 }).notNull(),
-	body: text().notNull(),
-	sha: varchar({ length: 255 }).notNull(),
-	githubUrl: varchar("github_url", { length: 255 }).notNull(),
-	activityCreatedAt: timestamp("activity_created_at", { mode: 'string' }).defaultNow(),
-	fetchedAt: timestamp("fetched_at", { mode: 'string' }).defaultNow(),
-}, (table) => [
-	uniqueIndex("idx_github_activity_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "github_activity_user_id_users_id_fk"
-		}),
-	pgPolicy("policy_Select_Github_Activity", { as: "permissive", for: "select", to: ["public"] }),
-	pgPolicy("policy_Insert_Github_Activity", { as: "permissive", for: "insert", to: ["public"] }),
-	pgPolicy("policy_Update_Github_Activity", { as: "permissive", for: "update", to: ["public"] }),
-	pgPolicy("policy_Delete_Github_Activity", { as: "permissive", for: "delete", to: ["public"] }),
-]);
+export const organizationType = pgEnum("organization_type", ['company', 'team', 'individual'])
+export const organizationStatus = pgEnum("organization_status", ['active', 'inactive'])
+export const organizationCategory = pgEnum("organization_category", ['technology', 'finance', 'hand made', 'government', 'non-profit', 'other'])
 
 export const subscriptions = pgTable("subscriptions", {
 	subId: uuid("sub_id").defaultRandom().primaryKey().notNull(),
@@ -111,53 +39,6 @@ export const subscriptions = pgTable("subscriptions", {
 	pgPolicy("policy_Insert_Subscriptions", { as: "permissive", for: "insert", to: ["public"] }),
 ]);
 
-export const generatedPosts = pgTable("generated_posts", {
-	postId: uuid("post_id").defaultRandom().primaryKey().notNull(),
-	userId: uuid("user_id"),
-	activityId: uuid("activity_id"),
-	style: varchar({ length: 255 }).notNull(),
-	content: text().notNull(),
-	promptUsed: text("prompt_used").notNull(),
-	modelUsed: varchar("model_used", { length: 255 }).notNull(),
-	hasWatermark: boolean("has_watermark").default(false),
-	isCopied: boolean("is_copied").default(false),
-	createAt: timestamp("create_at", { mode: 'string' }).defaultNow(),
-}, (table) => [
-	uniqueIndex("idx_generated_posts_activity_id").using("btree", table.activityId.asc().nullsLast().op("uuid_ops")),
-	uniqueIndex("idx_generated_posts_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.activityId],
-			foreignColumns: [githubActivity.activityId],
-			name: "generated_posts_activity_id_github_activity_activity_id_fk"
-		}),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "generated_posts_user_id_users_id_fk"
-		}),
-	pgPolicy("policy_Select_Generated_Posts", { as: "permissive", for: "select", to: ["public"] }),
-	pgPolicy("policy_Insert_Generated_Posts", { as: "permissive", for: "insert", to: ["public"] }),
-	pgPolicy("policy_Update_Generated_Posts", { as: "permissive", for: "update", to: ["public"] }),
-]);
-
-export const githubAccessTokens = pgTable("github_access_tokens", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	userId: uuid("user_id"),
-	providerToken: varchar("provider_token", { length: 255 }).notNull(),
-	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
-	owner: varchar({ length: 255 }).notNull(),
-}, (table) => [
-	uniqueIndex("idx_github_access_tokens_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "github_access_tokens_user_id_users_id_fk"
-		}),
-	pgPolicy("policy_Select_Github_Access_Tokens", { as: "permissive", for: "select", to: ["public"] }),
-	pgPolicy("policy_Insert_Github_Access_Tokens", { as: "permissive", for: "insert", to: ["public"] }),
-	pgPolicy("policy_Update_Github_Access_Tokens", { as: "permissive", for: "update", to: ["public"] }),
-]);
-
 export const users = pgTable("users", {
     id: uuid().default(sql`auth.uid()`).primaryKey().notNull(),
     email: varchar({ length: 255 }).notNull(), // อีเมลควรเป็น notNull
@@ -165,19 +46,186 @@ export const users = pgTable("users", {
     free: plan(),
     daliyPostCount: integer("daliy_post_count").default(0),
     // ลบ .default('') ออก เพื่อให้เป็น NULL ได้
-    referralCode: varchar("referral_code", { length: 255 }), 
-    referredBy: varchar("referred_by", { length: 255 }),
     createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
     updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
     lastActiveAt: timestamp("last_active_at", { mode: 'string' }).defaultNow(),
     username: varchar({ length: 255 }),
 }, (table) => [
     uniqueIndex("idx_email").using("btree", table.email.asc().nullsLast()),
-    uniqueIndex("idx_referral_code").using("btree", table.referralCode.asc().nullsLast()),
 	pgPolicy("policy_Select_Users", { as: "permissive", for: "select", to: ["public"] }),
 	pgPolicy("policy_Insert_Users", { as: "permissive", for: "insert", to: ["public"] }),
 	pgPolicy("policy_Update_Users", { as: "permissive", for: "update", to: ["public"] }),
 	pgPolicy("policy_Delete_Users", { as: "permissive", for: "delete", to: ["public"] }),
-    // แนะนำให้ลบ uniqueIndex ของ referredBy ออก 
-    // เพราะเพื่อนหลายคนควรถูกแนะนำโดยคนคนเดียวกันได้
+]);
+
+export const organizations = pgTable("organizations", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	userId: uuid("user_id"),
+	organizationName: varchar("organization_name", { length: 255 }).notNull(),
+	organizationType: organizationType(),
+	organizationStatus: organizationStatus(),
+	organizationCategory: organizationCategory(),
+	organizationDescription: varchar("organization_description", { length: 255 }).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
+}, (table) => [
+	pgPolicy("policy_Select_Organizations", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Organizations", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Organizations", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Organizations", { as: "permissive", for: "delete", to: ["public"] }),
+	foreignKey({
+		columns: [table.userId],
+		foreignColumns: [users.id],
+		name: "organizations_user_id_users_id_fk"
+	}),
+]);
+
+export const lineMockSessions = pgTable("line_mock_sessions", {
+	lineUserId: varchar("line_user_id", { length: 64 }).primaryKey().notNull(),
+	createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+}, (table) => [
+	pgPolicy("policy_Select_Line_Mock_Sessions", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Line_Mock_Sessions", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Line_Mock_Sessions", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Line_Mock_Sessions", { as: "permissive", for: "delete", to: ["public"] }),
+]);
+
+export const mockProductGenerations = pgTable("mock_product_generations", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	lineUserId: varchar("line_user_id", { length: 64 }).notNull(),
+	lineDisplayName: varchar("line_display_name", { length: 256 }),
+	sourceImageDataUrl: text("source_image_data_url").notNull(), /** รูปต้นทาง — เดิม data URL; ตอนนี้แนะนำ Cloudinary secure URL */
+	generatedImageDataUrl: text("generated_image_data_url"), /** ผล AI — Cloudinary โฟลเดอร์ product-ai-generate หรือ data URL เก่า */
+	/** เมทาดาตาโฟลว์ + URL Cloudinary ใน cloudinary.* */
+	generateProduct: jsonb("generate_product").notNull().$type<Record<string, unknown>>(),
+	createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+}, (table) => [
+	pgPolicy("policy_Select_Mock_Product_Generations", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Mock_Product_Generations", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Mock_Product_Generations", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Mock_Product_Generations", { as: "permissive", for: "delete", to: ["public"] }),
+]);
+
+/** เซสชัน LINE: รอรูปดีไซน์แล้วตามด้วยรูปเสื้อ (garment) */
+export const lineDesignToProductSessions = pgTable("line_design_to_product_sessions", {
+	lineUserId: varchar("line_user_id", { length: 64 }).primaryKey().notNull(),
+	/** รูปดีไซน์ — Cloudinary origin หรือ data URL เก่า */
+	designImageDataUrl: text("design_image_data_url"),
+	createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+}, (table) => [
+	pgPolicy("policy_Select_Line_Design_To_Product_Sessions", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Line_Design_To_Product_Sessions", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Line_Design_To_Product_Sessions", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Line_Design_To_Product_Sessions", { as: "permissive", for: "delete", to: ["public"] }),
+]);
+
+/** ผล design-to-product จาก Worker /api/design-to-product */
+export const designToProductGenerations = pgTable("design_to_product_generations", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	lineUserId: varchar("line_user_id", { length: 64 }).notNull(),
+	lineDisplayName: varchar("line_display_name", { length: 256 }),
+	designImageDataUrl: text("design_image_data_url").notNull(), /** Cloudinary origin */
+	productImageDataUrl: text("product_image_data_url").notNull(), /** Cloudinary origin (รูปเสื้อ) */
+	/** ผลลัพธ์ — Cloudinary product-ai-generate หรือ data URL เก่า */
+	resultImageDataUrl: text("result_image_data_url"),
+	/** ข้อความฟิลด์ product ที่ส่งไป API */
+	productPrompt: text("product_prompt").notNull(),
+	/** พารามิเตอร์ฟอร์มที่ส่ง (faithful, remove_bg, shot, …) */
+	apiFormParams: jsonb("api_form_params").notNull().$type<Record<string, string>>(),
+	/** วิเคราะห์รูปเสื้อจาก OpenRouter (ถ้ามี) */
+	garmentAnalysis: jsonb("garment_analysis").$type<Record<string, unknown>>(),
+	errorMessage: text("error_message"),
+	createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+}, (table) => [
+	pgPolicy("policy_Select_Design_To_Product_Generations", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Design_To_Product_Generations", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Design_To_Product_Generations", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Design_To_Product_Generations", { as: "permissive", for: "delete", to: ["public"] }),
+]);
+
+export const productionGeneratedDesigns = pgTable("production_generated_designs", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	prompt: text("prompt").notNull(),
+	generatedImageDataUrl: text("generated_image_data_url").notNull(),
+	createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+}, (table) => [
+	pgPolicy("policy_Select_Product_Generations", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Product_Generations", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Product_Generations", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Product_Generations", { as: "permissive", for: "delete", to: ["public"] }),
+]);
+
+/** OAuth + token ต่อผู้ใช้แอป (เชื่อมบัญชี TikTok) */
+export const tiktokCreatorTokens = pgTable("tiktok_creator_tokens", {
+	userId: uuid("user_id").primaryKey().notNull(),
+	tiktokOpenId: varchar("tiktok_open_id", { length: 64 }).notNull(),
+	accessToken: text("access_token").notNull(),
+	refreshToken: text("refresh_token").notNull(),
+	expiresAt: timestamp("expires_at", { mode: "string", withTimezone: true }).notNull(),
+	scope: text("scope"),
+	createdAt: timestamp("created_at", { mode: "string", withTimezone: true }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: "string", withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+	uniqueIndex("idx_tiktok_creator_open_id").on(table.tiktokOpenId),
+	foreignKey({
+		columns: [table.userId],
+		foreignColumns: [users.id],
+		name: "tiktok_creator_tokens_user_id_users_id_fk",
+	}),
+	pgPolicy("policy_Select_Tiktok_Creator_Tokens", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Tiktok_Creator_Tokens", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Tiktok_Creator_Tokens", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Tiktok_Creator_Tokens", { as: "permissive", for: "delete", to: ["public"] }),
+]);
+
+/** โพสต์ผ่าน Content Posting API (รูปหลายแผ่น = photo carousel) */
+export const tiktokPosts = pgTable("tiktok_posts", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	userId: uuid("user_id").notNull(),
+	publishId: text("publish_id").notNull(),
+	tiktokItemId: text("tiktok_item_id"),
+	/** pending | processing | published | failed */
+	status: varchar("status", { length: 32 }).default("pending").notNull(),
+	failReason: text("fail_reason"),
+	title: text("title"),
+	description: text("description"),
+	photoImageUrls: jsonb("photo_image_urls").notNull().$type<string[]>(),
+	privacyLevel: varchar("privacy_level", { length: 64 }).default("PUBLIC_TO_EVERYONE").notNull(),
+	createdAt: timestamp("created_at", { mode: "string", withTimezone: true }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: "string", withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+	uniqueIndex("idx_tiktok_posts_publish_id").on(table.publishId),
+	foreignKey({
+		columns: [table.userId],
+		foreignColumns: [users.id],
+		name: "tiktok_posts_user_id_users_id_fk",
+	}),
+	pgPolicy("policy_Select_Tiktok_Posts", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Tiktok_Posts", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Tiktok_Posts", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Tiktok_Posts", { as: "permissive", for: "delete", to: ["public"] }),
+]);
+
+/** snapshot ยอดวิว/ไลก์/คอมเมนต์ — ดึงซ้ำได้เพื่อกราฟ / near real-time polling */
+export const tiktokPostMetrics = pgTable("tiktok_post_metrics", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	postId: uuid("post_id").notNull(),
+	capturedAt: timestamp("captured_at", { mode: "string", withTimezone: true }).defaultNow().notNull(),
+	viewCount: integer("view_count").default(0).notNull(),
+	likeCount: integer("like_count").default(0).notNull(),
+	commentCount: integer("comment_count").default(0).notNull(),
+	shareCount: integer("share_count").default(0).notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.postId],
+		foreignColumns: [tiktokPosts.id],
+		name: "tiktok_post_metrics_post_id_tiktok_posts_id_fk",
+	}).onDelete("cascade"),
+	pgPolicy("policy_Select_Tiktok_Post_Metrics", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_Insert_Tiktok_Post_Metrics", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_Update_Tiktok_Post_Metrics", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_Delete_Tiktok_Post_Metrics", { as: "permissive", for: "delete", to: ["public"] }),
 ]);
