@@ -7,7 +7,7 @@ export const handleLinkProvider = async (
   const path =
     next ?? (typeof window !== "undefined" ? window.location.pathname : "/");
   const res = await fetch(
-    `${publicEnv.NEXT_PUBLIC_API_URL}/api/auth/link-provider`,
+    `/api/auth/link-provider`,
     {
       method: "POST",
       credentials: "include",
@@ -38,7 +38,7 @@ export const handleUnlinkProvider = async (
   provider: "github",
 ): Promise<{ error?: string }> => {
   const res = await fetch(
-    `${publicEnv.NEXT_PUBLIC_API_URL}/api/auth/unlink-provider`,
+    `/api/auth/unlink-provider`,
     {
       method: "POST",
       credentials: "include",

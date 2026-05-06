@@ -45,7 +45,7 @@ const serverEnvSchema = z.object({
   TIKTOK_CLIENT_SECRET: z.string().optional(),
   /**
    * Comma-separated OAuth scopes; must be enabled for your app in TikTok portal.
-   * Default in code: user.info.basic only. For Content Posting after approval: e.g. user.info.basic,video.publish,video.list
+   * Default in code: user.info.basic,video.publish,video.list (จำเป็นสำหรับโพสต์รูป + ดึงเมตริก)
    */
   TIKTOK_OAUTH_SCOPES: z.string().optional(),
   /**
@@ -53,6 +53,15 @@ const serverEnvSchema = z.object({
    * default: {NEXT_PUBLIC_APP_URL}/api/tiktok/oauth/callback
    */
   TIKTOK_REDIRECT_URI: z.string().url().optional(),
+  /**
+   * ไม่บังคับ — ลงนามโทเกนโพรกซีรูป /api/tiktok/media-pull/ (ค่า default ใช้ TIKTOK_CLIENT_SECRET)
+   */
+  TIKTOK_MEDIA_PULL_SECRET: z.string().optional(),
+  /**
+   * แอปที่ยังไม่ผ่าน Content Posting audit: TikTok อนุญาตโพสต์แค่ SELF_ONLY — ตั้งเป็น true แล้ว API จะบังคับ privacy นี้
+   * @see https://developers.tiktok.com/doc/content-sharing-guidelines
+   */
+  TIKTOK_UNAUDITED_SELF_ONLY: z.boolean(),
   COOKIE_PREFIX: z
     .string()
     .min(1, "Set COOKIE_PREFIX or NEXT_PUBLIC_COOKIE_PREFIX in your environment file."),
@@ -85,6 +94,11 @@ export const serverEnv: ServerEnv = serverEnvSchema.parse({
   TIKTOK_CLIENT_SECRET: process.env.TIKTOK_CLIENT_SECRET,
   TIKTOK_OAUTH_SCOPES: process.env.TIKTOK_OAUTH_SCOPES,
   TIKTOK_REDIRECT_URI: process.env.TIKTOK_REDIRECT_URI,
+  TIKTOK_MEDIA_PULL_SECRET: process.env.TIKTOK_MEDIA_PULL_SECRET,
+  TIKTOK_UNAUDITED_SELF_ONLY:
+    process.env.TIKTOK_UNAUDITED_SELF_ONLY === undefined
+      ? true
+      : process.env.TIKTOK_UNAUDITED_SELF_ONLY === "1" ||
+        process.env.TIKTOK_UNAUDITED_SELF_ONLY.toLowerCase() === "true",
   COOKIE_PREFIX: process.env.COOKIE_PREFIX ?? publicEnv.NEXT_PUBLIC_COOKIE_PREFIX,
-  SUPABASE_PROJECT_REF: process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF ?? publicEnv.NEXT_PUBLIC_SUPABASE_PROJECT_REF,
 });

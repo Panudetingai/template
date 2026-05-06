@@ -1,6 +1,5 @@
 "use client";
 
-import { publicEnv } from "@/env/public";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,8 +21,8 @@ import appConfig from "@/configs/app.config";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Github, Google } from "@lobehub/icons";
-import { useMutation } from "@tanstack/react-query";
-import { Controller, useForm } from "react-hook-form";
+import { useCallback, useState } from "react";
+import { Controller, useForm, useFormState } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -52,44 +51,70 @@ export default function SignInForm() {
     },
   });
 
-  const { mutate: handleProvider } = useMutation({
-    mutationFn: async (provider: "google" | "github") => {
-      const res = await fetch(
-        `${publicEnv.NEXT_PUBLIC_API_URL}/api/auth/provider`,
-        {
+  const { errors } = useFormState({ control: form.control });
+  const oauthError = errors.root?.serverError?.message as string | undefined;
+
+  const [oauthPendingProvider, setOauthPendingProvider] = useState<
+    "google" | "github" | null
+  >(null);
+
+  const startOAuth = useCallback(
+    async (provider: "google" | "github") => {
+      form.clearErrors("root.serverError");
+      const toastId = toast.loading("กำลังเปิดหน้าเข้าสู่ระบบ…");
+      setOauthPendingProvider(provider);
+
+      try {
+        const res = await fetch(`${window.location.origin}/api/auth/provider`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ provider }),
-        },
-      );
-      const text = await res.text();
-      let data: { url?: string; message?: string } = {};
-      if (text) {
-        try {
-          data = JSON.parse(text) as { url?: string; message?: string };
-        } catch {
-          form.setError("root.serverError", {
-            message: "เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON ที่ถูกต้อง",
-          });
+        });
+        const text = await res.text();
+        let data: { url?: string; message?: string } = {};
+        if (text) {
+          try {
+            data = JSON.parse(text) as { url?: string; message?: string };
+          } catch {
+            form.setError("root.serverError", {
+              message: "เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON ที่ถูกต้อง",
+            });
+            toast.error("เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง");
+            return;
+          }
+        }
+        if (!res.ok) {
+          const msg =
+            data.message ??
+            `OAuth ล้มเหลว (${res.status}). เปิดแท็บ Network และดู /api/auth/provider`;
+          form.setError("root.serverError", { message: msg });
+          toast.error(msg);
           return;
         }
+        if (!data.url) {
+          const msg =
+            data.message ?? "ไม่ได้รับ URL สำหรับ OAuth จากเซิร์ฟเวอร์";
+          form.setError("root.serverError", { message: msg });
+          toast.error(msg);
+          return;
+        }
+        toast.dismiss(toastId);
+        window.location.assign(data.url);
+      } catch (e) {
+        const msg =
+          e instanceof Error
+            ? e.message
+            : "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ — เช็กเน็ตหรือที่บล็อก fetch";
+        form.setError("root.serverError", { message: msg });
+        toast.error(msg);
+      } finally {
+        toast.dismiss(toastId);
+        setOauthPendingProvider(null);
       }
-      if (!res.ok) {
-        form.setError("root.serverError", {
-          message: data.message ?? `OAuth ล้มเหลว (${res.status})`,
-        });
-        return;
-      }
-      if (!data.url) {
-        form.setError("root.serverError", {
-          message: data.message ?? "ไม่ได้รับ URL สำหรับ OAuth",
-        });
-        return;
-      }
-      window.location.assign(data.url);
     },
-  });
+    [form],
+  );
 
   const onSubmit = form.handleSubmit(async (data) => {
     toast.warning("Coming soon to use email and password to sign in", {
@@ -106,8 +131,8 @@ export default function SignInForm() {
           with Google or GitHub
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form className="space-y-4" onSubmit={onSubmit}>
+      <CardContent className="flex flex-col gap-6">
+        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
           <FieldGroup>
             <Controller
               control={form.control}
@@ -153,9 +178,14 @@ export default function SignInForm() {
           <Button type="submit" size={"lg"} className="w-full">
             Sign in to your account
           </Button>
-          <div className="relative flex items-center justify-center">
+        </form>
+        {oauthError ? (
+          <FieldError role="alert">{oauthError}</FieldError>
+        ) : null}
+        <div className="flex flex-col gap-4">
+          <div className="relative flex items-center justify-center gap-2">
             <hr className="flex-1" />
-            <span className="text-sm text-muted-foreground px-2">
+            <span className="text-sm whitespace-nowrap text-muted-foreground px-2">
               Or continue with
             </span>
             <hr className="flex-1" />
@@ -163,26 +193,28 @@ export default function SignInForm() {
           <div className="flex flex-col gap-2">
             <Button
               type="button"
-              onClick={() => handleProvider("google")}
+              disabled={oauthPendingProvider !== null}
+              onClick={() => void startOAuth("google")}
               variant={"outline"}
               size={"lg"}
               className="w-full"
             >
-              <Google />
-              Google
+              <Google aria-hidden />
+              {oauthPendingProvider === "google" ? "กำลังเปิดหน้า…" : "Google"}
             </Button>
             <Button
               type="button"
-              onClick={() => handleProvider("github")}
+              disabled={oauthPendingProvider !== null}
+              onClick={() => void startOAuth("github")}
               variant={"outline"}
               size={"lg"}
               className="w-full"
             >
-              <Github />
-              GitHub
+              <Github aria-hidden />
+              {oauthPendingProvider === "github" ? "กำลังเปิดหน้า…" : "GitHub"}
             </Button>
           </div>
-        </form>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">

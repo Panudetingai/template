@@ -1,9 +1,10 @@
 "use client";
 
-import type { TiktokPostListItem } from "@/module/tiktok/tiktok.types";
+import type {
+  TiktokPostListItem,
+  TiktokProductTableRow,
+} from "@/module/tiktok/tiktok.types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -18,8 +19,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import TiktokLogin from "./tiktok-login";
+import { publicEnv } from "@/env/public";
 
-const API = "/api/tiktok";
+const API = `${publicEnv.NEXT_PUBLIC_CLOUDFLARE_URL ?? publicEnv.NEXT_PUBLIC_APP_URL}/api/tiktok`;
+
+// ── helpers ──────────────────────────────────────────────────────────────────
 
 async function parseJson(res: Response): Promise<unknown> {
   const text = await res.text();
@@ -32,40 +37,37 @@ async function parseJson(res: Response): Promise<unknown> {
 }
 
 function getErrorBody(data: unknown): string | undefined {
-  if (data && typeof data === "object" && "error" in data && typeof (data as { error: unknown }).error === "string") {
+  if (
+    data &&
+    typeof data === "object" &&
+    "error" in data &&
+    typeof (data as { error: unknown }).error === "string"
+  ) {
     return (data as { error: string }).error;
   }
 }
 
+// ── types ─────────────────────────────────────────────────────────────────────
+
 type PostsResponse = { posts: TiktokPostListItem[] };
+type ProductsResponse = { products: TiktokProductTableRow[] };
 type ConnectionResponse = { connected: boolean; tiktokOpenId: string | null };
 
-export function TiktokDashboardClient({
-  initialPosts,
+// ── custom hook — single source of truth for TikTok state ────────────────────
+
+function useTiktokState({
   initialConnected,
+  initialProducts,
 }: {
-  initialPosts: TiktokPostListItem[];
   initialConnected: boolean;
+  initialProducts: TiktokProductTableRow[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toastedRef = useRef(false);
   const queryClient = useQueryClient();
-  const [connected, setConnected] = useState(initialConnected);
 
-  const postsQuery = useQuery<PostsResponse>({
-    queryKey: ["tiktok-posts"],
-    queryFn: async () => {
-      const res = await fetch(`${API}/posts`, { credentials: "include" });
-      const data = await parseJson(res);
-      const err = getErrorBody(data);
-      if (err) throw new Error(err);
-      return data as PostsResponse;
-    },
-    initialData: { posts: initialPosts },
-    refetchInterval: 15_000,
-  });
-
+  // Connection status — preloaded from server, refreshed on demand
   const connectionQuery = useQuery<ConnectionResponse>({
     queryKey: ["tiktok-connection"],
     queryFn: async () => {
@@ -76,26 +78,42 @@ export function TiktokDashboardClient({
       return data as ConnectionResponse;
     },
     initialData: { connected: initialConnected, tiktokOpenId: null },
+    staleTime: 30_000,
   });
 
-  useEffect(() => {
-    if (connectionQuery.data?.connected !== undefined) {
-      setConnected(connectionQuery.data.connected);
-    }
-  }, [connectionQuery.data?.connected]);
+  const connected = connectionQuery.data.connected;
+  const tiktokOpenId = connectionQuery.data.tiktokOpenId;
 
+  const productsQuery = useQuery<ProductsResponse>({
+    queryKey: ["tiktok-products"],
+    queryFn: async () => {
+      const res = await fetch(`${API}/products`, { credentials: "include" });
+      const data = await parseJson(res);
+      const err = getErrorBody(data);
+      if (err) throw new Error(err);
+      return data as ProductsResponse;
+    },
+    initialData: { products: initialProducts },
+    refetchInterval: 15_000,
+    enabled: connected,
+  });
+
+  const products = productsQuery.data.products;
+
+  // Handle OAuth callback query params — run once per mount
   useEffect(() => {
     if (toastedRef.current) return;
     const ok = searchParams.get("tiktok_connected");
     const err = searchParams.get("tiktok_error");
     const detail = searchParams.get("tiktok_error_detail");
+
     if (ok) {
       toastedRef.current = true;
       toast.success("เชื่อมบัญชี TikTok แล้ว");
       router.replace("/dashboard/tiktok");
       void queryClient.invalidateQueries({ queryKey: ["tiktok-connection"] });
       void queryClient.invalidateQueries({ queryKey: ["tiktok-posts"] });
-      setConnected(true);
+      void queryClient.invalidateQueries({ queryKey: ["tiktok-products"] });
     } else if (err) {
       toastedRef.current = true;
       toast.error(detail || err);
@@ -103,24 +121,33 @@ export function TiktokDashboardClient({
     }
   }, [searchParams, router, queryClient]);
 
-  const disconnectM = useMutation({
+  // Disconnect
+  const disconnectMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`${API}/connection`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`${API}/connection`, {
+        method: "DELETE",
+        credentials: "include",
+      });
       const data = await parseJson(res);
       const err = getErrorBody(data);
       if (err) throw new Error(err);
     },
     onSuccess: () => {
       toast.success("ตัดการเชื่อม TikTok แล้ว");
-      setConnected(false);
       void queryClient.invalidateQueries({ queryKey: ["tiktok-connection"] });
+      void queryClient.invalidateQueries({ queryKey: ["tiktok-posts"] });
+      void queryClient.invalidateQueries({ queryKey: ["tiktok-products"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const syncM = useMutation({
+  // Sync a single post's metrics
+  const syncMutation = useMutation({
     mutationFn: async (postId: string) => {
-      const res = await fetch(`${API}/posts/${postId}/sync`, { method: "POST", credentials: "include" });
+      const res = await fetch(`${API}/posts/${postId}/sync`, {
+        method: "POST",
+        credentials: "include",
+      });
       const data = await parseJson(res);
       const err = getErrorBody(data);
       if (err) throw new Error(err);
@@ -128,198 +155,183 @@ export function TiktokDashboardClient({
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["tiktok-posts"], data);
+      void queryClient.invalidateQueries({ queryKey: ["tiktok-products"] });
       toast.success("อัปเดตยอดล่าสุดแล้ว");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const publishM = useMutation({
-    mutationFn: async (fd: FormData) => {
-      const res = await fetch(`${API}/posts/publish`, {
+  const publishProductsMutation = useMutation({
+    mutationFn: async (rows: TiktokProductTableRow[]) => {
+      const res = await fetch(`${API}/products/publish`, {
         method: "POST",
         credentials: "include",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          products: rows.map((row) => ({
+            source: row.source,
+            id: row.sourceId,
+          })),
+          caption: rows.map((row) => row.productName).join("\n"),
+          privacyLevel: "SELF_ONLY",
+          allowComments: "true",
+        }),
       });
       const data = await parseJson(res);
       const err = getErrorBody(data);
       if (err) throw new Error(err);
-      return data as { posts?: TiktokPostListItem[] };
+      return data as { posts?: TiktokPostListItem[]; products?: TiktokProductTableRow[] };
     },
     onSuccess: (data) => {
       if (data.posts) {
         queryClient.setQueryData(["tiktok-posts"], { posts: data.posts });
       }
-      toast.success("ส่งโพสต์ไป TikTok แล้ว — รอประมวลผลสักครู่แล้วกดซิงก์");
+      if (data.products) {
+        queryClient.setQueryData(["tiktok-products"], { products: data.products });
+      }
+      toast.success("โพสต์สินค้าที่เลือกไป TikTok แล้ว");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const posts = postsQuery.data?.posts ?? [];
+  return {
+    connected,
+    tiktokOpenId,
+    products,
+    isRefreshingProducts: productsQuery.isFetching,
+    refetchProducts: productsQuery.refetch,
+    disconnect: () => disconnectMutation.mutate(),
+    isDisconnecting: disconnectMutation.isPending,
+    syncPost: (id: string) => syncMutation.mutate(id),
+    isSyncing: syncMutation.isPending,
+    publishProducts: (rows: TiktokProductTableRow[]) =>
+      publishProductsMutation.mutate(rows),
+    isPublishingProducts: publishProductsMutation.isPending,
+  };
+}
+
+// ── sub-components ────────────────────────────────────────────────────────────
+
+function ConnectionCard({
+  tiktokOpenId,
+  onDisconnect,
+  isDisconnecting,
+}: {
+  tiktokOpenId: string | null;
+  onDisconnect: () => void;
+  isDisconnecting: boolean;
+}) {
+  return (
+    <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+      <h2 className="text-lg font-medium">บัญชี TikTok</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        ต้องลงทะเบียนแอปที่{" "}
+        <Link
+          className="text-primary underline"
+          href="https://developers.tiktok.com/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          TikTok for Developers
+        </Link>{" "}
+        และ URL prefix โดเมนแอปเพื่อโพสต์รูป:{" "}
+        <code className="rounded bg-muted px-1 py-0.5 text-xs">
+          {`${(publicEnv.NEXT_PUBLIC_CLOUDFLARE_URL ?? publicEnv.NEXT_PUBLIC_APP_URL).replace(/\/$/, "")}/api/tiktok/media-pull/`}
+        </code>{" "}
+        (ไม่ต้อง verify Cloudinary โดยตรง)
+      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <span className="text-sm text-muted-foreground">
+          เชื่อมแล้ว
+          {tiktokOpenId ? ` (…${tiktokOpenId.slice(-6)})` : ""}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isDisconnecting}
+          onClick={onDisconnect}
+        >
+          {isDisconnecting && (
+            <Loader2 className="mr-2 size-4 animate-spin" />
+          )}
+          ตัดการเชื่อม
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function ProductsTable({
+  products,
+  isRefreshing,
+  onRefresh,
+  onSync,
+  isSyncing,
+  onPublishSelected,
+  isPublishingSelected,
+}: {
+  products: TiktokProductTableRow[];
+  isRefreshing: boolean;
+  onRefresh: () => void;
+  onSync: (id: string) => void;
+  isSyncing: boolean;
+  onPublishSelected: (rows: TiktokProductTableRow[]) => void;
+  isPublishingSelected: boolean;
+}) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const postableProducts = products.filter(
+    (row) => row.source !== "tiktok" && !row.tiktokPost,
+  );
+  const selectedRows = products.filter((row) => selectedIds.includes(row.id));
+  const postableRows = selectedRows.filter((row) => postableProducts.includes(row));
+  const selectedFileTypes = new Set(postableRows.map((row) => row.fileType));
+  const canPublish =
+    postableRows.length > 0 &&
+    selectedFileTypes.size === 1 &&
+    (postableRows[0]?.fileType === "PHOTO" || postableRows.length === 1);
+
+  function toggleRow(rowId: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked ? [...current, rowId] : current.filter((id) => id !== rowId),
+    );
+  }
+
+  function toggleAll(checked: boolean) {
+    setSelectedIds(checked ? postableProducts.map((row) => row.id) : []);
+  }
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* ── เชื่อมบัญชี ── */}
-      <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-        <h2 className="text-lg font-medium">เชื่อมบัญชี TikTok</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          ต้องลงทะเบียนแอปที่{" "}
-          <Link
-            className="text-primary underline"
-            href="https://developers.tiktok.com/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            TikTok for Developers
-          </Link>
-          {" "}— เปิด Login Kit + Content Posting (Direct post) และ verify URL โดเมน Cloudinary ตามเอกสาร PULL_FROM_URL
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          {!connected ? (
+    <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-medium">สินค้าและโพสต์ TikTok</h2>
+          <p className="text-sm text-muted-foreground">
+            เลือกสินค้าที่อัปโหลดไว้แล้วกดโพสต์ รูปหลายรายการจะรวมเป็น 1 TikTok photo post
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {selectedRows.length > 0 && (
             <Button
               type="button"
+              size="sm"
+              disabled={!canPublish || isPublishingSelected}
               onClick={() => {
-                window.location.href = `${API}/oauth/start`;
+                onPublishSelected(postableRows);
+                setSelectedIds([]);
               }}
             >
-              เชื่อมบัญชี TikTok
+              {isPublishingSelected && <Loader2 className="size-4 animate-spin" />}
+              <span className="ml-2">โพสต์ที่เลือก ({postableRows.length})</span>
             </Button>
-          ) : (
-            <>
-              <span className="text-sm text-muted-foreground">
-                เชื่อมแล้ว
-                {connectionQuery.data?.tiktokOpenId
-                  ? ` (…${connectionQuery.data.tiktokOpenId.slice(-6)})`
-                  : ""}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={disconnectM.isPending}
-                onClick={() => disconnectM.mutate()}
-              >
-                {disconnectM.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-                ตัดการเชื่อม
-              </Button>
-            </>
           )}
-        </div>
-      </section>
-
-      {/* ── โพสต์รูป ── */}
-      <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-        <h2 className="text-lg font-medium">โพสต์รูป (Photo post)</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          อัปโหลดรูป → Cloudinary → TikTok ดึงรูปจาก URL ที่โดเมนถูก verify แล้ว
-        </p>
-        <form
-          className="mt-4 flex max-w-xl flex-col gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!connected) {
-              toast.error("เชื่อมบัญชี TikTok ก่อน");
-              return;
-            }
-            const form = e.currentTarget;
-            const fd = new FormData(form);
-            const caption = String(fd.get("caption") ?? "").trim();
-            if (!caption) {
-              toast.error("ใส่คำบรรยายโพสต์");
-              return;
-            }
-            const fileInput = form.elements.namedItem("images") as HTMLInputElement;
-            if (!fileInput?.files?.length) {
-              toast.error("เลือกอย่างน้อย 1 รูป");
-              return;
-            }
-            publishM.mutate(fd, {
-              onSuccess: () => form.reset(),
-            });
-          }}
-        >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="tiktok-caption">คำบรรยาย (caption)</Label>
-            <textarea
-              id="tiktok-caption"
-              name="caption"
-              rows={3}
-              maxLength={2200}
-              required
-              className="border-input bg-transparent focus-visible:ring-ring/50 w-full rounded-lg border px-2.5 py-2 text-sm outline-none focus-visible:ring-3"
-              placeholder="#เสื้อยืด #ลายใหม่ อธิบายสินค้า / ราคา / ช่องทางสั่งซื้อ"
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tiktok-privacy">ระดับความเป็นส่วนตัว</Label>
-              <select
-                id="tiktok-privacy"
-                name="privacyLevel"
-                className="border-input h-8 w-full rounded-lg border px-2 text-sm"
-                defaultValue="PUBLIC_TO_EVERYONE"
-              >
-                <option value="PUBLIC_TO_EVERYONE">สาธารณะ</option>
-                <option value="MUTUAL_FOLLOW_FRIENDS">เพื่อนที่ติดตามซึ่งกันและกัน</option>
-                <option value="SELF_ONLY">ส่วนตัว</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tiktok-cover">รูปปก (0 = รูปแรก)</Label>
-              <Input
-                id="tiktok-cover"
-                name="coverIndex"
-                type="number"
-                min={0}
-                defaultValue={0}
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="tiktok-comments">ความคิดเห็น</Label>
-            <select
-              id="tiktok-comments"
-              name="allowComments"
-              className="border-input h-8 w-full max-w-xs rounded-lg border px-2 text-sm"
-              defaultValue="true"
-            >
-              <option value="true">เปิด</option>
-              <option value="false">ปิด</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="tiktok-images">รูป 1–9 ไฟล์ (สูงสุดไฟล์ละ 25 MB)</Label>
-            <Input
-              id="tiktok-images"
-              name="images"
-              type="file"
-              accept="image/*"
-              multiple
-              required
-            />
-          </div>
-          <Button type="submit" disabled={publishM.isPending || !connected}>
-            {publishM.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {publishM.isPending ? "กำลังอัปโหลด…" : "อัปโหลดและโพสต์"}
-          </Button>
-        </form>
-      </section>
-
-      {/* ── ตารางโพสต์ ── */}
-      <section className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-lg font-medium">โพสต์และยอด</h2>
-            <p className="text-sm text-muted-foreground">
-              ยอดวิว / ไลก์ / คอมเมนต์ จาก TikTok Display API — รีเฟรชอัตโนมัติทุก 15 วินาที
-            </p>
-          </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            disabled={postsQuery.isFetching}
-            onClick={() => void postsQuery.refetch()}
+            disabled={isRefreshing}
+            onClick={onRefresh}
           >
-            {postsQuery.isFetching ? (
+            {isRefreshing ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <RefreshCw className="size-4" />
@@ -327,69 +339,161 @@ export function TiktokDashboardClient({
             <span className="ml-2">รีเฟรช</span>
           </Button>
         </div>
+      </div>
+      {selectedRows.length > 0 && !canPublish && (
+        <p className="text-muted-foreground mt-3 text-xs">
+          โพสต์ได้เฉพาะสินค้าที่ยังไม่เคยโพสต์ และต้องไม่เลือก PHOTO/VIDEO ปนกัน
+          (วิดีโอเลือกได้ครั้งละ 1 รายการ)
+        </p>
+      )}
 
-        <div className="mt-4">
-          <Table>
-            <TableHeader>
+      <div className="mt-4">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[48px]">
+                <input
+                  type="checkbox"
+                  aria-label="เลือกทั้งหมด"
+                  checked={
+                    postableProducts.length > 0 &&
+                    postableProducts.every((row) => selectedIds.includes(row.id))
+                  }
+                  onChange={(event) => toggleAll(event.currentTarget.checked)}
+                />
+              </TableHead>
+              <TableHead>Product name</TableHead>
+              <TableHead>Status product</TableHead>
+              <TableHead>TikTok post</TableHead>
+              <TableHead>File type</TableHead>
+              <TableHead className="text-right">Like</TableHead>
+              <TableHead className="text-right">คอมเมนต์</TableHead>
+              <TableHead className="text-right">View</TableHead>
+              <TableHead className="w-[120px]">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {products.length === 0 ? (
               <TableRow>
-                <TableHead>คำบรรยาย</TableHead>
-                <TableHead>สถานะ</TableHead>
-                <TableHead className="text-right">วิว</TableHead>
-                <TableHead className="text-right">ไลก์</TableHead>
-                <TableHead className="text-right">คอมเมนต์</TableHead>
-                <TableHead className="w-[100px]">ซิงก์</TableHead>
+                <TableCell
+                  colSpan={9}
+                  className="text-muted-foreground text-sm"
+                >
+                  ยังไม่มีสินค้า/โพสต์ TikTok
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {posts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-muted-foreground text-sm">
-                    ยังไม่มีโพสต์
+            ) : (
+              products.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      aria-label={`เลือก ${row.productName}`}
+                      disabled={row.source === "tiktok" || row.tiktokPost != null}
+                      checked={selectedIds.includes(row.id)}
+                      onChange={(event) => toggleRow(row.id, event.currentTarget.checked)}
+                    />
                   </TableCell>
-                </TableRow>
-              ) : (
-                posts.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="max-w-[200px] truncate font-medium">
-                      {p.title ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs">{p.status}</span>
-                      {p.failReason && (
-                        <span className="text-destructive block text-xs">{p.failReason}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {p.latestMetric?.viewCount ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {p.latestMetric?.likeCount ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {p.latestMetric?.commentCount ?? "—"}
-                    </TableCell>
-                    <TableCell>
+                  <TableCell className="max-w-[200px] truncate font-medium">
+                    {row.productName}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs">{row.productStatus}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs">
+                      {row.tiktokPost?.status ?? "not posted"}
+                    </span>
+                    {row.tiktokPost?.failReason && (
+                      <span className="text-destructive block text-xs">
+                        {row.tiktokPost.failReason}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs">{row.fileType}</span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {row.latestMetric?.likeCount ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {row.latestMetric?.commentCount ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {row.latestMetric?.viewCount ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {row.tiktokPost ? (
                       <Button
                         type="button"
                         variant="secondary"
                         size="sm"
-                        disabled={syncM.isPending || !connected}
-                        onClick={() => syncM.mutate(p.id)}
+                        disabled={isSyncing}
+                        onClick={() => onSync(row.tiktokPost!.id)}
                       >
-                        {syncM.isPending ? (
+                        {isSyncing ? (
                           <Loader2 className="size-3 animate-spin" />
                         ) : (
                           "ดึงยอด"
                         )}
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </section>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">เลือกเพื่อโพสต์</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </section>
+  );
+}
+
+// ── main component ────────────────────────────────────────────────────────────
+
+export function TiktokDashboardClient({
+  initialProducts,
+  initialConnected,
+}: {
+  initialProducts: TiktokProductTableRow[];
+  initialConnected: boolean;
+}) {
+  const {
+    connected,
+    tiktokOpenId,
+    products,
+    isRefreshingProducts,
+    refetchProducts,
+    disconnect,
+    isDisconnecting,
+    syncPost,
+    isSyncing,
+    publishProducts,
+    isPublishingProducts,
+  } = useTiktokState({ initialConnected, initialProducts });
+
+  if (!connected) {
+    return <TiktokLogin />;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <ConnectionCard
+        tiktokOpenId={tiktokOpenId}
+        onDisconnect={disconnect}
+        isDisconnecting={isDisconnecting}
+      />
+      <ProductsTable
+        products={products}
+        isRefreshing={isRefreshingProducts}
+        onRefresh={() => void refetchProducts()}
+        onSync={syncPost}
+        isSyncing={isSyncing}
+        onPublishSelected={publishProducts}
+        isPublishingSelected={isPublishingProducts}
+      />
     </div>
   );
 }

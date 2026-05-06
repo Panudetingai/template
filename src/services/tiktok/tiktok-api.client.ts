@@ -5,8 +5,13 @@ import { serverEnv } from "@/env/server";
 
 /**
  * OAuth scope string for /v2/auth/authorize. TikTok rejects unknown or unassigned scopes.
- * @see https://developers.tiktok.com/doc/tiktok-api-scopes (there is no photo.publish — photos use video.publish)
+ * @see https://developers.tiktok.com/doc/tiktok-api-scopes
+ * Photo carousel (DIRECT_POST + PHOTO) ยังใช้ Content Posting → ต้องมี `video.publish`
+ * การ query วิดีโอหลังโพสต์ → `video.list`
  */
+const TIKTOK_DEFAULT_OAUTH_SCOPES =
+  "user.info.basic,video.publish,video.list";
+
 export function getTiktokOAuthScopesForRequest(): string {
   const raw = serverEnv.TIKTOK_OAUTH_SCOPES?.trim();
   if (raw) {
@@ -16,7 +21,7 @@ export function getTiktokOAuthScopesForRequest(): string {
       .filter(Boolean)
       .join(",");
   }
-  return "user.info.basic";
+  return TIKTOK_DEFAULT_OAUTH_SCOPES;
 }
 
 const TIKTOK_TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/";
@@ -29,7 +34,7 @@ export function tiktokRedirectUri(requestOrigin?: string): string {
   if (explicit) {
     return explicit.replace(/\/+$/, "");
   }
-  const base = requestOrigin ?? publicEnv.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  const base = requestOrigin ?? publicEnv.NEXT_PUBLIC_CLOUDFLARE_URL.replace(/\/$/, "");
   return `${base}${TIKTOK_OAUTH_CALLBACK_PATH}`;
 }
 
@@ -193,10 +198,47 @@ type TiktokEnvelope<T> = {
   error?: { code?: string; message?: string; log_id?: string };
 };
 
+function throwTikTokEnvelopeHttpError(
+  json: TiktokEnvelope<unknown>,
+  res: Response,
+): never {
+  const code = json.error?.code;
+  const message = (json.error?.message ?? "").trim();
+  const logId = json.error?.log_id;
+  const parts = [
+    message || res.statusText || `HTTP ${res.status}`,
+    code && code !== "ok" ? `[code: ${code}]` : null,
+    logId ? `[log_id: ${logId}]` : null,
+  ].filter(Boolean);
+  let extra = "";
+  if (
+    code === "unaudited_client_can_only_post_to_private_accounts" ||
+    /unaudited|SELF_ONLY|private account/i.test(message)
+  ) {
+    extra =
+      " — แอปที่ยังไม่ผ่าน audit โพสต์ได้แค่ SELF_ONLY: ตั้ง TIKTOK_UNAUDITED_SELF_ONLY=1 ใน .env หรือเลือกความเป็นส่วนตัว «ส่วนตัว» ในฟอร์ม (ดู content-sharing-guidelines)";
+  }
+  if (/integration guidelines|get-started/i.test(message)) {
+    extra +=
+      " — ตรวจบัญชี unaudited + privacy SELF_ONLY และฟิลด์ disclosure ใน post (ดู doc Get Started / Content Sharing Guidelines)";
+  }
+  throw new Error(parts.join(" ") + extra);
+}
+
 function assertOk<T>(json: TiktokEnvelope<T>): T {
   const code = json.error?.code;
   if (code && code !== "ok") {
-    throw new Error(json.error?.message || code);
+    const message = json.error?.message || code;
+    const logId = json.error?.log_id;
+    throw new Error(
+      [
+        message,
+        `[code: ${code}]`,
+        logId ? `[log_id: ${logId}]` : null,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    );
   }
   if (json.data === undefined) {
     throw new Error(json.error?.message || "TikTok API ไม่คืนข้อมูล");
@@ -226,7 +268,7 @@ export async function tiktokPostJson<T>(
   });
   const json = (await res.json()) as TiktokEnvelope<T>;
   if (!res.ok) {
-    throw new Error(json.error?.message || res.statusText || String(res.status));
+    throwTikTokEnvelopeHttpError(json, res);
   }
   return assertOk(json);
 }
@@ -274,21 +316,34 @@ export async function initTiktokPhotoDirectPost(input: {
   caption: string;
   privacyLevel: string;
   photoImageUrls: string[];
+  /** 0-based — TikTok photo API ใช้ 0-based index (รูปแรก = 0) */
   photoCoverIndex: number;
   disableComment: boolean;
 }): Promise<TiktokPhotoPostInitResult> {
-  const photo_images = input.photoImageUrls;
+  const photo_images = input.photoImageUrls
+    .map((u) => u.trim())
+    .filter((u) => u.length > 0);
   if (photo_images.length < 1 || photo_images.length > 35) {
     throw new Error("ต้องมีรูป 1–35 รูปตามข้อจำกัด TikTok");
   }
+  if (input.photoCoverIndex < 0 || input.photoCoverIndex >= photo_images.length) {
+    throw new Error("photo_cover_index ไม่อยู่ในช่วงรูปที่ส่ง");
+  }
+  const caption = input.caption.trim();
+  const title = caption.slice(0, 90);
+  const description = caption.slice(90, 4000) || undefined;
   return tiktokPostJson<TiktokPhotoPostInitResult>(
     input.accessToken,
     "/v2/post/publish/content/init/",
     {
       post_info: {
-        title: input.caption.slice(0, 2200),
+        title,
+        ...(description ? { description } : {}),
         disable_comment: input.disableComment,
         privacy_level: input.privacyLevel,
+        auto_add_music: true,
+        brand_content_toggle: false,
+        brand_organic_toggle: false,
       },
       source_info: {
         source: "PULL_FROM_URL",
@@ -297,6 +352,44 @@ export async function initTiktokPhotoDirectPost(input: {
       },
       post_mode: "DIRECT_POST",
       media_type: "PHOTO",
+    },
+  );
+}
+
+export type TiktokVideoPostInitResult = {
+  publish_id: string;
+};
+
+export async function initTiktokVideoDirectPost(input: {
+  accessToken: string;
+  caption: string;
+  privacyLevel: string;
+  videoUrl: string;
+  disableComment: boolean;
+}): Promise<TiktokVideoPostInitResult> {
+  const videoUrl = input.videoUrl.trim();
+  if (!videoUrl) {
+    throw new Error("video_url จำเป็น");
+  }
+  const caption = input.caption.trim();
+  const title = caption.slice(0, 2200);
+  return tiktokPostJson<TiktokVideoPostInitResult>(
+    input.accessToken,
+    "/v2/post/publish/video/init/",
+    {
+      post_info: {
+        title,
+        privacy_level: input.privacyLevel,
+        disable_comment: input.disableComment,
+        disable_duet: false,
+        disable_stitch: false,
+        brand_content_toggle: false,
+        brand_organic_toggle: false,
+      },
+      source_info: {
+        source: "PULL_FROM_URL",
+        video_url: videoUrl,
+      },
     },
   );
 }

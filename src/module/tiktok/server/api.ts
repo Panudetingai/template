@@ -12,13 +12,19 @@ import {
 } from "@/services/tiktok/tiktok-state";
 import {
   disconnectTiktok,
+  encodeTiktokProductRefs,
+  getTiktokProductsByRefs,
   getTiktokConnection,
+  listTiktokProductRowsForUser,
   listTiktokPostsForUser,
-  publishTiktokPhotoPost,
+  publishTiktokMediaPost,
   saveTiktokOAuthCode,
   syncTiktokPost,
+  type TiktokProductRef,
 } from "@/services/tiktok/tiktok-posts.service";
-import { uploadImageToCloudinary } from "@/services/cloudinary/cloudinary-upload.service";
+import { uploadTiktokMediaToCloudinary } from "@/services/cloudinary/cloudinary-upload.service";
+import { toTiktokPullProxyUrls } from "@/lib/tiktok/media-pull";
+import { publicEnv } from "@/env/public";
 import Elysia, { t } from "elysia";
 import z from "zod";
 
@@ -175,6 +181,14 @@ const tiktokApi = new Elysia({ prefix: "/tiktok" })
     const posts = await listTiktokPostsForUser(user.id);
     return { posts };
   })
+  .get("/products", async () => {
+    const user = await getUser();
+    if (!user?.id) {
+      return { error: "Unauthorized", status: 401 } as const;
+    }
+    const products = await listTiktokProductRowsForUser(user.id);
+    return { products };
+  })
   .post(
     "/posts/:postId/sync",
     async ({ params }) => {
@@ -200,6 +214,107 @@ const tiktokApi = new Elysia({ prefix: "/tiktok" })
     },
   )
   .post(
+    "/products/publish",
+    async ({ body }) => {
+      const user = await getUser();
+      if (!user?.id) {
+        return { error: "Unauthorized", status: 401 } as const;
+      }
+      const refs: TiktokProductRef[] = body.products
+        .map((item) => ({
+          source: item.source as TiktokProductRef["source"],
+          id: item.id,
+        }))
+        .filter(
+          (item): item is TiktokProductRef =>
+            (item.source === "production" ||
+              item.source === "mock" ||
+              item.source === "design") &&
+            z.string().uuid().safeParse(item.id).success,
+        );
+      if (refs.length === 0) {
+        return { error: "เลือกสินค้าอย่างน้อย 1 รายการ", status: 400 } as const;
+      }
+
+      const products = await getTiktokProductsByRefs(refs);
+      if (products.length === 0) {
+        return { error: "ไม่พบสินค้าที่เลือก", status: 400 } as const;
+      }
+      const fileTypes = new Set(products.map((product) => product.fileType));
+      if (fileTypes.size !== 1) {
+        return { error: "เลือกโพสต์รูปและวิดีโอปนกันไม่ได้", status: 400 } as const;
+      }
+      const mediaType = products[0]?.fileType ?? "PHOTO";
+      if (mediaType === "VIDEO" && products.length !== 1) {
+        return { error: "โพสต์วิดีโอเลือกได้ครั้งละ 1 รายการ", status: 400 } as const;
+      }
+
+      try {
+        const proxyBase = publicEnv.NEXT_PUBLIC_CLOUDFLARE_URL.replace(/\/+$/, "");
+        const caption =
+          body.caption?.trim().slice(0, 2200) ||
+          products.map((product) => product.productName).join("\n").slice(0, 2200);
+
+        // แปลง data URL → Cloudinary URL ก่อน proxy (TikTok ดึงรูปผ่าน HTTPS เท่านั้น)
+        const cloudinaryUrls: string[] = [];
+        for (const raw of products.flatMap((p) => p.mediaUrls)) {
+          if (raw.startsWith("data:")) {
+            const m = raw.match(/^data:([^;,]+)[^,]*,([\s\S]+)$/);
+            if (!m) throw new Error("data URL ไม่ถูกต้อง");
+            const buf = Buffer.from(m[2] ?? "", "base64");
+            const uploaded = await uploadTiktokMediaToCloudinary({
+              buffer: buf,
+              mimeType: m[1] ?? "image/jpeg",
+              ownerKey: user.id,
+            });
+            cloudinaryUrls.push(uploaded);
+          } else {
+            // Cloudinary URL อยู่แล้ว — ใส่ transform f_jpg เผื่อเป็น PNG
+            const withJpeg = raw.replace(
+              /\/image\/upload\/(v\d+\/)/,
+              "/image/upload/f_jpg,q_auto,w_1080,c_scale/$1",
+            );
+            cloudinaryUrls.push(withJpeg !== raw ? withJpeg : raw);
+          }
+        }
+
+        const result = await publishTiktokMediaPost({
+          userId: user.id,
+          caption,
+          privacyLevel: body.privacyLevel?.trim() || "SELF_ONLY",
+          allowComments: body.allowComments !== "false",
+          mediaType,
+          coverIndex: body.coverIndex ? Number.parseInt(body.coverIndex, 10) : 0,
+          mediaUrls: toTiktokPullProxyUrls(proxyBase, cloudinaryUrls),
+          sourceProductRef: encodeTiktokProductRefs(refs),
+        });
+        const [posts, rows] = await Promise.all([
+          listTiktokPostsForUser(user.id),
+          listTiktokProductRowsForUser(user.id),
+        ]);
+        return { publish: result, posts, products: rows };
+      } catch (e) {
+        const msg = e instanceof Error ? e.message.slice(0, 500) : String(e);
+        return { error: msg, status: 400 } as const;
+      }
+    },
+    {
+      body: t.Object({
+        products: t.Array(
+          t.Object({
+            source: t.String(),
+            id: t.String(),
+          }),
+          { minItems: 1, maxItems: 35 },
+        ),
+        caption: t.Optional(t.String()),
+        privacyLevel: t.Optional(t.String()),
+        coverIndex: t.Optional(t.String()),
+        allowComments: t.Optional(t.String()),
+      }),
+    },
+  )
+  .post(
     "/posts/publish",
     async ({ body }) => {
       const user = await getUser();
@@ -213,15 +328,31 @@ const tiktokApi = new Elysia({ prefix: "/tiktok" })
       const privacyLevel = (body.privacyLevel ?? "PUBLIC_TO_EVERYONE").trim();
       const coverIndex = body.coverIndex ? Number.parseInt(body.coverIndex, 10) : 0;
       const allowComments = body.allowComments !== "false";
+      const mediaType = (body.mediaType ?? "PHOTO").trim().toUpperCase();
+      if (mediaType !== "PHOTO" && mediaType !== "VIDEO") {
+        return { error: "mediaType ต้องเป็น PHOTO หรือ VIDEO", status: 400 } as const;
+      }
+      if (mediaType === "PHOTO" && body.mediaFiles.length > 35) {
+        return { error: "โพสต์รูปส่งได้สูงสุด 35 รูป", status: 400 } as const;
+      }
+      if (mediaType === "VIDEO" && body.mediaFiles.length !== 1) {
+        return { error: "โพสต์วิดีโอต้องมีไฟล์เดียว", status: 400 } as const;
+      }
 
       const urls: string[] = [];
       try {
-        for (const file of body.images) {
+        for (const file of body.mediaFiles) {
+          const type = (file.type || "").toLowerCase();
+          if (mediaType === "PHOTO" && !type.startsWith("image/")) {
+            return { error: "โหมด PHOTO ต้องอัปโหลดไฟล์รูปภาพเท่านั้น", status: 400 } as const;
+          }
+          if (mediaType === "VIDEO" && !type.startsWith("video/")) {
+            return { error: "โหมด VIDEO ต้องอัปโหลดไฟล์วิดีโอเท่านั้น", status: 400 } as const;
+          }
           const buf = Buffer.from(await file.arrayBuffer());
-          const url = await uploadImageToCloudinary({
+          const url = await uploadTiktokMediaToCloudinary({
             buffer: buf,
-            mimeType: file.type || "image/jpeg",
-            kind: "tiktok",
+            mimeType: file.type || (mediaType === "VIDEO" ? "video/mp4" : "image/jpeg"),
             ownerKey: user.id,
           });
           urls.push(url);
@@ -232,13 +363,15 @@ const tiktokApi = new Elysia({ prefix: "/tiktok" })
       }
 
       try {
-        const result = await publishTiktokPhotoPost({
+        const proxyBase = publicEnv.NEXT_PUBLIC_CLOUDFLARE_URL.replace(/\/+$/, "");
+        const result = await publishTiktokMediaPost({
           userId: user.id,
           caption,
           privacyLevel,
-          coverIndex: Number.isFinite(coverIndex) ? coverIndex : 0,
           allowComments,
-          imageUrls: urls,
+          mediaType,
+          coverIndex: Number.isFinite(coverIndex) ? coverIndex : 0,
+          mediaUrls: toTiktokPullProxyUrls(proxyBase, urls),
         });
         const posts = await listTiktokPostsForUser(user.id);
         return { publish: result, posts };
@@ -251,14 +384,14 @@ const tiktokApi = new Elysia({ prefix: "/tiktok" })
       parse: "multipart/form-data",
       body: t.Object({
         caption: t.String({ minLength: 1 }),
+        mediaType: t.Optional(t.String()),
         privacyLevel: t.Optional(t.String()),
         coverIndex: t.Optional(t.String()),
         allowComments: t.Optional(t.String()),
-        images: t.Files({
-          type: "image",
+        mediaFiles: t.Files({
           maxSize: "25m",
           minItems: 1,
-          maxItems: 9,
+          maxItems: 35,
         }),
       }),
     },

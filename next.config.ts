@@ -1,7 +1,12 @@
+import { publicEnv } from "@/env/public";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  allowedDevOrigins: [
+    publicEnv.NEXT_PUBLIC_CLOUDFLARE_URL.replace("https://", ""),
+    publicEnv.NEXT_PUBLIC_APP_URL.replace("https://", ""),
+  ],
   async headers() {
     return [
       {

@@ -2,7 +2,7 @@ import { TiktokDashboardClient } from "@/module/tiktok/components/tiktok-dashboa
 import { getUser } from "@/lib/supabase/server";
 import {
   getTiktokConnection,
-  listTiktokPostsForUser,
+  listTiktokProductRowsForUser,
 } from "@/services/tiktok/tiktok-posts.service";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -15,22 +15,16 @@ export default async function TiktokPage() {
     redirect("/auth/sign-in?next=/dashboard/tiktok");
   }
 
-  const [posts, conn] = await Promise.all([
-    listTiktokPostsForUser(user.id),
+  const [products, conn] = await Promise.all([
+    listTiktokProductRowsForUser(user.id),
     getTiktokConnection(user.id),
   ]);
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">TikTok</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          อัปโหลดรูป โพสต์อัตโนมัติ และดึงยอดวิว/คอมเมนต์เป็นระยะเพื่อดูแนวโน้มความต้องการ
-        </p>
-      </div>
       <Suspense fallback={<div className="text-muted-foreground text-sm">กำลังโหลด…</div>}>
         <TiktokDashboardClient
-          initialPosts={posts}
+          initialProducts={products}
           initialConnected={conn != null}
         />
       </Suspense>

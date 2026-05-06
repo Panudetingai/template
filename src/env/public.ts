@@ -20,6 +20,9 @@ const publicEnvSchema = z
     NEXT_PUBLIC_APP_URL: z
       .string()
       .url("Set NEXT_PUBLIC_APP_URL to a valid URL in your environment file."),
+      NEXT_PUBLIC_CLOUDFLARE_URL: z
+      .string()
+      .url("Set NEXT_PUBLIC_NGROK_URL to a valid URL in your environment file."),
     NEXT_PUBLIC_COOKIE_PREFIX: z
       .string()
       .min(1, "Set NEXT_PUBLIC_COOKIE_PREFIX in your environment file."),
@@ -81,6 +84,7 @@ export const publicEnv: PublicEnv = publicEnvSchema.parse({
   NEXT_PUBLIC_APP_TITLE: process.env.NEXT_PUBLIC_APP_TITLE,
   NEXT_PUBLIC_APP_DESCRIPTION: process.env.NEXT_PUBLIC_APP_DESCRIPTION,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_CLOUDFLARE_URL: process.env.NEXT_PUBLIC_CLOUDFLARE_URL,
   NEXT_PUBLIC_COOKIE_PREFIX: process.env.NEXT_PUBLIC_COOKIE_PREFIX,
   NEXT_PUBLIC_SUPABASE_PROJECT_REF: process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

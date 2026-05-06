@@ -62,7 +62,7 @@ export async function bufferFromImageRef(ref: string): Promise<{
       res.headers.get("content-type")?.split(";")[0]?.trim() ?? "image/jpeg";
     return { buffer, mimeType };
   }
-  const m = /^data:([^;]+);base64,(.+)$/s.exec(trimmed);
+  const m = /^data:([^;]+);base64,(.+)$/.exec(trimmed);
   if (!m?.[1] || !m?.[2]) {
     throw new Error("รูปอ้างอิงไม่ถูกต้อง (ต้องเป็น https URL หรือ data URL)");
   }
@@ -81,7 +81,6 @@ export async function uploadImageToCloudinary(input: {
   buffer: Buffer;
   mimeType: string;
   kind: CloudinaryUploadKind;
-  /** ใส่ lineUserId หรือ id อื่นเพื่อจัดกลุ่มใต้โฟลเดอร์ */
   ownerKey: string;
 }): Promise<string> {
   configureOnce();
@@ -95,14 +94,55 @@ export async function uploadImageToCloudinary(input: {
   const suffix = `${Date.now()}_${randomBytes(4).toString("hex")}`;
   const dataUri = `data:${input.mimeType};base64,${input.buffer.toString("base64")}`;
 
+  // TikTok PULL_FROM_URL requires a URL with explicit extension — force jpg so the URL always ends in .jpg
+  const isTiktok = input.kind === "tiktok";
+
   const result = await cloudinary.uploader.upload(dataUri, {
     folder,
     public_id: `${safeOwner}/${suffix}`,
     resource_type: "image",
     overwrite: false,
+    ...(isTiktok ? { format: "jpg", quality: "auto" } : {}),
   });
 
   const url = result.secure_url;
+  if (!url || typeof url !== "string") {
+    throw new Error("Cloudinary ไม่คืน secure_url");
+  }
+  return url;
+}
+
+export async function uploadTiktokMediaToCloudinary(input: {
+  buffer: Buffer;
+  mimeType: string;
+  ownerKey: string;
+}): Promise<string> {
+  configureOnce();
+  const folder = cloudinaryFolderTiktok();
+  const safeOwner = sanitizePathSegment(input.ownerKey);
+  const suffix = `${Date.now()}_${randomBytes(4).toString("hex")}`;
+  const trimmedMime = input.mimeType.trim().toLowerCase();
+  const isVideo = trimmedMime.startsWith("video/");
+  const dataUri = `data:${input.mimeType};base64,${input.buffer.toString("base64")}`;
+
+  const result = await cloudinary.uploader.upload(dataUri, {
+    folder,
+    public_id: `${safeOwner}/${suffix}`,
+    resource_type: isVideo ? "video" : "image",
+    overwrite: false,
+    format: isVideo ? undefined : "jpg",
+    quality: "auto",
+    // สร้าง derived image 1080px JPEG สำหรับ TikTok (eager_async: false = รอให้เสร็จก่อน)
+    ...(isVideo
+      ? {}
+      : {
+          eager: [{ width: 1080, crop: "scale", format: "jpg", quality: "auto" }],
+          eager_async: false,
+        }),
+  });
+
+  // ใช้ eager URL (1080px JPEG) ถ้ามี มิฉะนั้นใช้ original
+  const url = (!isVideo && result.eager?.[0]?.secure_url) || result.secure_url;
   if (!url || typeof url !== "string") {
     throw new Error("Cloudinary ไม่คืน secure_url");
   }
