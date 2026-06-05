@@ -49,11 +49,16 @@ export async function updateSession(request: NextRequest) {
 
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith("/auth/sign-in")
+    !request.nextUrl.pathname.startsWith("/auth/sign-in") &&
+    !request.nextUrl.pathname.startsWith("/auth/sign-up")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/sign-in";
+    if (!request.nextUrl.pathname.startsWith("/auth/sign-up")) {
+      url.pathname = "/auth/sign-in"  ;
+    } else {
+      url.pathname = "/auth/sign-up";
+    }
     return NextResponse.redirect(url);
   }
 

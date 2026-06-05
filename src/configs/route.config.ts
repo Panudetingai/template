@@ -22,8 +22,8 @@ const routerConfigSchema = z.object({
 
 const routerConfig = routerConfigSchema.parse({
     auth: {
-        SignIn: "/sign-in",
-        SignUp: "/sign-up",
+        SignIn: "/auth/sign-in",
+        SignUp: "/auth/sign-up",
         ForgotPassword: "/forgot-password",
         ResetPassword: "/reset-password",
         VerifyEmail: "/verify-email",

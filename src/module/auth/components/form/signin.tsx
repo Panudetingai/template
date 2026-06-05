@@ -2,27 +2,29 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
+    Field,
+    FieldContent,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import appConfig from "@/configs/app.config";
+import routerConfig from "@/configs/route.config";
 import { api } from "@/lib/elysia/eden-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Google } from "@lobehub/icons";
 import { useMutation } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -39,7 +41,10 @@ export const SignInSchema = z.object({
     .min(1, { message: "Please enter your password" })
     .min(8, { message: "Please enter a valid password" })
     .max(20, { message: "Password must be less than 20 characters" })
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, { message: "Please enter a valid password" }),
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      { message: "Please enter a valid password" },
+    ),
 });
 
 export type SignInSchemaType = z.infer<typeof SignInSchema>;
@@ -75,7 +80,7 @@ export default function SignInForm() {
   });
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle className="text-lg">Sign in to your account</CardTitle>
         <CardDescription className="text-sm">
@@ -97,7 +102,11 @@ export default function SignInForm() {
                       {...field}
                       placeholder="example@example.com"
                       type="email"
-                      className={cn("w-full", fieldState.error && "border-destructive ring-destructive")}
+                      className={cn(
+                        "w-full",
+                        fieldState.error &&
+                          "border-destructive ring-destructive",
+                      )}
                     />
                   </FieldContent>
                   {fieldState.error && (
@@ -117,8 +126,20 @@ export default function SignInForm() {
                       {...field}
                       placeholder="Enter your password"
                       type="password"
-                      className={cn("w-full", fieldState.error && "border-destructive ring-destructive")}
+                      className={cn(
+                        "w-full",
+                        fieldState.error &&
+                          "border-destructive ring-destructive",
+                      )}
                     />
+                    <div className="flex justify-end">
+                      <Link
+                        href={routerConfig.auth.ForgotPassword}
+                        className="text-sm text-primary underline"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
                   </FieldContent>
                   {fieldState.error && (
                     <FieldError>{fieldState.error.message}</FieldError>
@@ -149,12 +170,23 @@ export default function SignInForm() {
               Google
             </Button>
           </div>
+          <div className="flex gap-2 items-center justify-center">
+            <p className="text-sm text-muted-foreground">
+              Don&apos;t have an account?
+            </p>
+            <Link
+              href={routerConfig.auth.SignUp}
+              className="text-sm text-primary underline"
+            >
+              sign up
+            </Link>
+          </div>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
-          All rights reserved.
-          &copy; {new Date().getFullYear()} {appConfig.name}
+          All rights reserved. &copy; {new Date().getFullYear()}{" "}
+          {appConfig.name}
         </p>
       </CardFooter>
     </Card>
