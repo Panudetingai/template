@@ -1,15 +1,10 @@
 import routerConfig from "@/configs/route.config";
 import {
-  BookIcon,
-  BrainIcon,
-  CreditCardIcon,
+  BellIcon,
   LayoutDashboardIcon,
   LucideIcon,
-  MessageCircleIcon,
   SettingsIcon,
-  SparklesIcon,
   UserIcon,
-  ZapIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -39,59 +34,33 @@ const sidebarItems: groupItems[] = [
     label: "Apps",
     items: [
       {
-        label: "Repositorie",
+        label: "Dashboard",
         icon: LayoutDashboardIcon,
         role: ["pro", "team", "free"],
-        href: routerConfig.app.Repositorie,
+        href: routerConfig.app.Dashboard,
       },
       {
-        label: "Classifier",
-        icon: BrainIcon,
+        label: "Notifications",
+        icon: BellIcon,
         role: ["pro", "team", "free"],
-        href: routerConfig.app.Classifier,
+        href: routerConfig.app.Notifications,
       },
-      {
-        label: "Generate",
-        icon: SparklesIcon,
-        role: ["pro", "team", "free"],
-        href: routerConfig.app.Generator,
-      },
-      {
-        label: "Post",
-        icon: MessageCircleIcon,
-        role: ["pro", "team", "free"],
-      },
-      {
-        label: "stories",
-        icon: BookIcon,
-        role: ["pro", "team", "free"],
-        href: routerConfig.app.Stories,
-      }
     ],
   },
   {
     label: "Settings",
     items: [
       {
-        label: "Billing",
-        icon: CreditCardIcon,
-        role: ["pro", "team", "free"],
-      },
-      {
         label: "Profile",
         icon: UserIcon,
         role: ["pro", "team", "free"],
-      },
-      {
-        label: "Integrations",
-        icon: ZapIcon,
-        role: ["pro", "team", "free"],
-        href: routerConfig.app.Integrations,
+        href: routerConfig.app.Profile,
       },
       {
         label: "Settings",
         icon: SettingsIcon,
         role: ["pro", "team", "free"],
+        href: routerConfig.app.Settings,
       },
     ],
   },

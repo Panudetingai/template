@@ -2,11 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "Dayily",
-    short_name: process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "Dayily",
+    name: process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "App",
+    short_name: process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "App",
     description:
-      process.env.NEXT_PUBLIC_APP_DESCRIPTION ??
-      "Automated social media posts from your commits",
+      process.env.NEXT_PUBLIC_APP_DESCRIPTION ?? "Application",
     start_url: "/",
     display: "standalone",
     orientation: "any",

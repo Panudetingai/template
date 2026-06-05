@@ -15,23 +15,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/client";
 import useUsers from "@/lib/supabase/hooks/use-users";
-import { Github } from "@lobehub/icons";
 import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { handleLinkProvider } from "./handles/linkprovider";
-
-function ConnectGitHubItem() {
-  const handleConnect = async () => {
-    await handleLinkProvider("github");
-  };
-
-  return (
-    <DropdownMenuItem onClick={handleConnect}>
-      <Github.Avatar size={24} />
-      Connect GitHub
-    </DropdownMenuItem>
-  );
-}
 
 const menuItems = [
   { label: "Upgrade to Pro", icon: Sparkles, href: "/upgrade-to-pro" },
@@ -117,8 +102,6 @@ export default function UserMenu({ variant = "sidebar" }: UserMenuProps) {
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <ConnectGitHubItem />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="flex cursor-pointer items-center gap-2"

@@ -64,7 +64,7 @@ npm run dev && bun run dev
 - `src/components/` — คอมโพเนนต์ UI และ layout
 - `src/lib/` — ช่วยเชื่อม Supabase, Drizzle, Elysia client ฯลฯ
 - `src/module/` — โมดูลเฉพาะ เช่น auth
-- `src/services/` — บริการภายนอก (GitHub, LLM/Groq ฯลฯ)
+- `src/services/` — บริการภายนอก (LLM/Groq ฯลฯ)
 
 ---
 

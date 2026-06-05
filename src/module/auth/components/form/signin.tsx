@@ -21,7 +21,7 @@ import appConfig from "@/configs/app.config";
 import { api } from "@/lib/elysia/eden-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Github, Google } from "@lobehub/icons";
+import { Google } from "@lobehub/icons";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
@@ -55,7 +55,7 @@ export default function SignInForm() {
   });
 
   const { mutate: handleProvider } = useMutation({
-    mutationFn: async (provider: "google" | "github") => {
+    mutationFn: async (provider: "google") => {
       const response = await api.auth.provider.post({ provider });
       if (response.error) {
         form.setError("root.serverError", {
@@ -80,7 +80,7 @@ export default function SignInForm() {
         <CardTitle className="text-lg">Sign in to your account</CardTitle>
         <CardDescription className="text-sm">
           Enter your email and password to sign in to your account or continue
-          with Google or GitHub
+          with Google
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -147,16 +147,6 @@ export default function SignInForm() {
             >
               <Google />
               Google
-            </Button>
-            <Button
-              type="button"
-              onClick={() => handleProvider("github")}
-              variant={"outline"}
-              size={"lg"}
-              className="w-full"
-            >
-              <Github />
-              GitHub
             </Button>
           </div>
         </form>

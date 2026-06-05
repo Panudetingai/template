@@ -1,13 +1,10 @@
 import routerConfig from "@/configs/route.config";
 import type { LucideIcon } from "lucide-react";
 import {
-  BrainIcon,
-  CreditCardIcon,
+  BellIcon,
   LayoutDashboardIcon,
   SettingsIcon,
-  SparklesIcon,
   UserIcon,
-  ZapIcon
 } from "lucide-react";
 
 export type NavItem = {
@@ -18,22 +15,20 @@ export type NavItem = {
 
 export const mainNavItems: NavItem[] = [
   {
-    label: "Repositorie",
+    label: "Dashboard",
     icon: LayoutDashboardIcon,
-    href: routerConfig.app.Repositorie,
+    href: routerConfig.app.Dashboard,
   },
+  { label: "Profile", icon: UserIcon, href: routerConfig.app.Profile },
   {
-    label: "Classifier",
-    icon: BrainIcon,
-    href: routerConfig.app.Classifier,
+    label: "Notifications",
+    icon: BellIcon,
+    href: routerConfig.app.Notifications,
   },
-  { label: "Generate", icon: SparklesIcon, href: routerConfig.app.Generator },
-  { label: "Integrations", icon: ZapIcon, href: routerConfig.app.Integrations },
+  { label: "Settings", icon: SettingsIcon, href: routerConfig.app.Settings },
 ];
 
 export const settingsNavItems: NavItem[] = [
-  { label: "Billing", icon: CreditCardIcon, href: "/billing" },
-  { label: "Profile", icon: UserIcon, href: "/profile" },
+  { label: "Profile", icon: UserIcon, href: routerConfig.app.Profile },
   { label: "Settings", icon: SettingsIcon, href: routerConfig.app.Settings },
-  { label: "Integrations", icon: ZapIcon, href: routerConfig.app.Integrations },
 ];

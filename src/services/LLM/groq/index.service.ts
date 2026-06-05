@@ -4,7 +4,6 @@ import { NextRequest } from "next/server";
 import { serverEnv } from "@/env/server";
 import { GenerateParameters } from "../llm.service";
 import { AgentsService } from "./agents/agents.service";
-import { OCRService, OCRSlipResult } from "./agents/ocr.service";
 
 export type GroqConfig = {
     headers?: Headers | NextRequest | Record<string, string | undefined>;
@@ -58,20 +57,6 @@ class GroqService {
         const model = await this.groqModel();
         const agentsService = new AgentsService(model);
         return agentsService.generateAgent(parameters);
-    }
-
-    // Generate OCR
-    public async generateOCR(file: File) {
-        const model = await this.groqModel();
-        const ocrService = new OCRService(model);
-        return ocrService.generateOCR(file);
-    }
-
-    /** หลายไฟล์ — แบ่งชุดละสูงสุด 5 ภาพต่อคำขอ Groq แล้วรวมผลทั้งหมด */
-    public async generateOCRManyImages(files: File[]): Promise<OCRSlipResult[]> {
-        const model = await this.groqModel();
-        const ocrService = new OCRService(model);
-        return ocrService.generateOCRManyImages(files);
     }
 }
 

@@ -7,12 +7,12 @@ export const app = new Elysia({ prefix: "/api" })
   .use(swagger({
     documentation: {
       info: {
-        title: "SlipCleaner API",
+        title: "API",
         version: "1.0.0",
-        description: "API for SlipCleaner",
+        description: "API documentation",
       },
     },
   }))
-  .get("/", () => "welcome to dayily v2")
+  .get("/", () => "ok")
   .group("/auth", (app) => app.use(auth))
   .use(generate)

@@ -23,7 +23,7 @@ function AuthErrorHandlerInner() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("auth-error");
     params.delete("auth-error-message");
-    router.replace(routerConfig.app.Repositorie);
+    router.replace(routerConfig.app.Dashboard);
   }, [searchParams, router]);
 
   useEffect(() => {
