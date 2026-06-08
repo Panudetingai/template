@@ -27,27 +27,8 @@ import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
+import { SignInSchema, type SignInSchemaType } from "@/module/auth/schema";
 import { toast } from "sonner";
-import { z } from "zod";
-
-export const SignInSchema = z.object({
-  email: z
-    .string()
-    .min(1, { message: "Please enter your email" })
-    .email({ message: "Please enter a valid email address" })
-    .max(100, { message: "Email must be less than 100 characters" }),
-  password: z
-    .string()
-    .min(1, { message: "Please enter your password" })
-    .min(8, { message: "Please enter a valid password" })
-    .max(20, { message: "Password must be less than 20 characters" })
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      { message: "Please enter a valid password" },
-    ),
-});
-
-export type SignInSchemaType = z.infer<typeof SignInSchema>;
 
 export default function SignInForm() {
   const router = useRouter();

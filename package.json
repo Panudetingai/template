@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:check": "bun run scripts/check-db-connection.ts",
+    "db:pull": "bun run db:check && drizzle-kit pull"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.31",

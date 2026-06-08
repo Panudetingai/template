@@ -1,0 +1,75 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {},
+  "enums": {
+    "public.activity_type": {
+      "name": "activity_type",
+      "values": [
+        "push",
+        "pull_request",
+        "issue",
+        "commit"
+      ],
+      "schema": "public"
+    },
+    "public.plan": {
+      "name": "plan",
+      "values": [
+        "free",
+        "pro",
+        "enterprise"
+      ],
+      "schema": "public"
+    },
+    "public.platform": {
+      "name": "platform",
+      "values": [
+        "twitter",
+        "x",
+        "reddit",
+        "facebook",
+        "instagram",
+        "linkedin",
+        "other"
+      ],
+      "schema": "public"
+    },
+    "public.subscriptions_plan": {
+      "name": "subscriptions_plan",
+      "values": [
+        "pro",
+        "team"
+      ],
+      "schema": "public"
+    },
+    "public.subscriptions_status": {
+      "name": "subscriptions_status",
+      "values": [
+        "pending",
+        "active",
+        "cancelled",
+        "expired",
+        "trial",
+        "paused",
+        "inactive"
+      ],
+      "schema": "public"
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "tables": {}
+  }
+}

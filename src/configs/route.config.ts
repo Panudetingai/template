@@ -1,4 +1,14 @@
+import { publicEnv } from "@/env/public";
 import z from "zod";
+
+function apiUrlToWsUrl(apiUrl: string) {
+    const url = new URL(apiUrl);
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    return `${url.origin}/api/ws-auth`;
+}
+
+const wsUrl =
+    publicEnv.NEXT_PUBLIC_WS_URL ?? apiUrlToWsUrl(publicEnv.NEXT_PUBLIC_API_URL);
 
 const routerConfigSchema = z.object({
     auth: z.object({
@@ -15,6 +25,12 @@ const routerConfigSchema = z.object({
         Notifications: z.string().min(1),
         Settings: z.string().min(1),
     }),
+    api: z.object({
+        auth: z.object({
+            webhook: z.string().min(1),
+            webhookHttp: z.string().min(1),
+        }),
+    }),
     onboarding: z.string().min(1),
     error: z.string().min(1),
     notFound: z.string().min(1),
@@ -26,7 +42,7 @@ const routerConfig = routerConfigSchema.parse({
         SignUp: "/auth/sign-up",
         ForgotPassword: "/forgot-password",
         ResetPassword: "/reset-password",
-        VerifyEmail: "/verify-email",
+        VerifyEmail: "/auth/verify-email",
         VerifyPhone: "/verify-phone",
     },
     app: {
@@ -34,6 +50,12 @@ const routerConfig = routerConfigSchema.parse({
         Profile: "/profile",
         Notifications: "/notifications",
         Settings: "/settings",
+    },
+    api: {
+        auth: {
+            webhook: wsUrl,
+            webhookHttp: `${publicEnv.NEXT_PUBLIC_API_URL}/api/auth/webhook`,
+        },
     },
     onboarding: "/onboarding",
     error: "/error",

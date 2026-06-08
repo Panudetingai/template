@@ -27,27 +27,10 @@ import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
+import { SignupSchema, type SignupSchemaType } from "@/module/auth/schema";
+import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { z } from "zod";
-
-export const SignupSchema = z.object({
-  email: z
-    .string()
-    .min(1, { message: "Please enter your email" })
-    .email({ message: "Please enter a valid email address" })
-    .max(100, { message: "Email must be less than 100 characters" }),
-  password: z
-    .string()
-    .min(1, { message: "Please enter your password" })
-    .min(8, { message: "Please enter a valid password" })
-    .max(20, { message: "Password must be less than 20 characters" })
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      { message: "Please enter a valid password" },
-    ),
-});
-
-export type SignupSchemaType = z.infer<typeof SignupSchema>;
+import { AuthError } from "@supabase/supabase-js";
 
 export default function SignInForm() {
   const router = useRouter();
@@ -73,9 +56,31 @@ export default function SignInForm() {
     },
   });
 
+  // signup credentials mutation
+  const { mutate, isPending} = useMutation({
+    mutationFn: async (data: SignupSchemaType) => {
+      const response = await api.auth.signup.post({
+        email: data.email,
+        password: data.password
+      });
+      
+      if (response.error) throw response.error;
+
+      return response.data;
+    }
+  })
+
   const onSubmit = form.handleSubmit(async (data) => {
-    toast.warning("Coming soon to use email and password to sign in", {
-      description: `We are working on it ${data.email} ${data.password}`,
+    mutate(data, {
+      onSuccess: ({user}) => {
+        console.log(data)
+        if (user?.id) {
+          router.push(`${routerConfig.auth.VerifyEmail}?userId=${user.id}`);
+        }
+      },
+      onError: ({message}) => {
+        toast.error(message);
+      }
     });
   });
 
@@ -140,8 +145,8 @@ export default function SignInForm() {
               )}
             />
           </FieldGroup>
-          <Button type="submit" size={"lg"} className="w-full">
-            Sign in to your account
+          <Button type="submit" size={"lg"} className="w-full" disabled={isPending}>
+            {isPending ? <Spinner /> : "Create your account"}
           </Button>
           <div className="relative flex items-center justify-center">
             <hr className="flex-1" />

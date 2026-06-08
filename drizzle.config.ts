@@ -8,7 +8,7 @@ export default defineConfig({
   schema: './drizzle/schema.ts',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.NEXT_PUBLIC_SUPABASE_DATABASE_URL_ORM!,
+    url: process.env.NEXT_PUBLIC_SUPABASE_DATABASE_URL!,
   },
   verbose: true,
   strict: true,

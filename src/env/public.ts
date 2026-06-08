@@ -35,6 +35,10 @@ const publicEnvSchema = z
     NEXT_PUBLIC_API_URL: z
       .string()
       .url("Set NEXT_PUBLIC_API_URL in your environment file."),
+    NEXT_PUBLIC_WS_URL: z
+      .string()
+      .min(1, "Set NEXT_PUBLIC_WS_URL in your environment file.")
+      .optional(),
     NEXT_PUBLIC_SUPABASE_DATABASE_URL: z
       .string()
       .min(1, "Set NEXT_PUBLIC_SUPABASE_DATABASE_URL in your environment file."),
@@ -70,6 +74,7 @@ export const publicEnv: PublicEnv = publicEnvSchema.parse({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
   NEXT_PUBLIC_SUPABASE_DATABASE_URL:
     process.env.NEXT_PUBLIC_SUPABASE_DATABASE_URL,
   NEXT_PUBLIC_SUPABASE_DATABASE_URL_ORM:

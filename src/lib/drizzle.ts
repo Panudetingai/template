@@ -4,7 +4,8 @@ import { Pool } from "pg";
 import { publicEnv } from "@/env/public";
 
 const pool = new Pool({
-  connectionString: publicEnv.NEXT_PUBLIC_SUPABASE_DATABASE_URL,
+  connectionString: publicEnv.NEXT_PUBLIC_SUPABASE_DATABASE_URL_ORM,
+  ssl: { rejectUnauthorized: false },
 });
 const db = drizzle({
   client: pool,

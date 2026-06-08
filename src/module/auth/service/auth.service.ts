@@ -1,4 +1,6 @@
+import { publicEnv } from "@/env/public";
 import { createClient } from "@/lib/supabase/server";
+import { AuthError } from "@supabase/supabase-js";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -20,8 +22,7 @@ class AuthService {
             email,
             password,
         });
-
-        if (error) throw new Error(error.message);
+        if (error) return error;
 
         return data;
     }
@@ -31,10 +32,15 @@ class AuthService {
         const { data, error } = await this.supabase.auth.signUp({
             email,
             password,
+            options: {
+                emailRedirectTo: `${publicEnv.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
+            }
         });
 
-        if (error) throw new Error(error.message);
+        if (error) return error;
 
         return data;
     }
 }
+
+export {AuthService}
