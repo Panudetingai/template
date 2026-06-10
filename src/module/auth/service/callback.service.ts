@@ -1,5 +1,6 @@
 import { db } from "@/lib/drizzle";
 import { createClient } from "@/lib/supabase/server";
+import { OnboardingService } from "@/module/service/onboarding.service";
 import type { User } from "@supabase/supabase-js";
 import { users } from "../../../../drizzle/schema";
 

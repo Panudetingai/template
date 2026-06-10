@@ -17,23 +17,31 @@ import {
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+    InputGroup,
+    InputGroupButton,
+    InputGroupInput,
+} from "@/components/ui/input-group";
+import { Spinner } from "@/components/ui/spinner";
 import appConfig from "@/configs/app.config";
 import routerConfig from "@/configs/route.config";
 import { api } from "@/lib/elysia/eden-client";
 import { cn } from "@/lib/utils";
+import { SignupSchema, type SignupSchemaType } from "@/module/auth/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Google } from "@lobehub/icons";
 import { useMutation } from "@tanstack/react-query";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { SignupSchema, type SignupSchemaType } from "@/module/auth/schema";
-import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { AuthError } from "@supabase/supabase-js";
 
 export default function SignInForm() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+
   const form = useForm<SignupSchemaType>({
     resolver: zodResolver(SignupSchema),
     defaultValues: {
@@ -41,6 +49,10 @@ export default function SignInForm() {
       password: "",
     },
   });
+
+  const handleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
 
   const { mutate: handleProvider } = useMutation({
     mutationFn: async (provider: "google") => {
@@ -57,30 +69,30 @@ export default function SignInForm() {
   });
 
   // signup credentials mutation
-  const { mutate, isPending} = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: async (data: SignupSchemaType) => {
       const response = await api.auth.signup.post({
         email: data.email,
-        password: data.password
+        password: data.password,
       });
-      
+
       if (response.error) throw response.error;
 
       return response.data;
-    }
-  })
+    },
+  });
 
   const onSubmit = form.handleSubmit(async (data) => {
     mutate(data, {
-      onSuccess: ({user}) => {
-        console.log(data)
+      onSuccess: ({ user }) => {
+        console.log(data);
         if (user?.id) {
           router.push(`${routerConfig.auth.VerifyEmail}?userId=${user.id}`);
         }
       },
-      onError: ({message}) => {
+      onError: ({ message }) => {
         toast.error(message);
-      }
+      },
     });
   });
 
@@ -127,16 +139,23 @@ export default function SignInForm() {
                 <Field>
                   <FieldLabel>Password</FieldLabel>
                   <FieldContent>
-                    <Input
-                      {...field}
-                      placeholder="Enter your password"
-                      type="password"
-                      className={cn(
-                        "w-full",
-                        fieldState.error &&
-                          "border-destructive ring-destructive",
-                      )}
-                    />
+                    <InputGroup>
+                      <InputGroupInput
+                        {...field}
+                        placeholder="Enter your password"
+                        type={showPassword ? "text" : "password"}
+                      />
+                      <InputGroupButton
+                        variant="ghost"
+                        onClick={() => handleShowPassword()}
+                      >
+                        {showPassword ? (
+                          <EyeIcon className="size-4 shrink-0 opacity-50" />
+                        ) : (
+                          <EyeOffIcon className="size-4 shrink-0 opacity-50" />
+                        )}
+                      </InputGroupButton>
+                    </InputGroup>
                   </FieldContent>
                   {fieldState.error && (
                     <FieldError>{fieldState.error.message}</FieldError>
@@ -145,7 +164,12 @@ export default function SignInForm() {
               )}
             />
           </FieldGroup>
-          <Button type="submit" size={"lg"} className="w-full" disabled={isPending}>
+          <Button
+            type="submit"
+            size={"lg"}
+            className="w-full"
+            disabled={isPending}
+          >
             {isPending ? <Spinner /> : "Create your account"}
           </Button>
           <div className="relative flex items-center justify-center">

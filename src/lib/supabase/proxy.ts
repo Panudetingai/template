@@ -1,10 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import routerConfig from "@/configs/route.config";
 import { publicEnv } from "@/env/public";
 
 const AUTH_COOKIE_NAME = `${publicEnv.NEXT_PUBLIC_COOKIE_PREFIX}-${publicEnv.NEXT_PUBLIC_SUPABASE_PROJECT_REF}-auth-token`;
-export async function updateSession(request: NextRequest) {
+type SessionResult = {
+  response: NextResponse;
+  userId?: string;
+};
+
+export async function updateSession(request: NextRequest): Promise<SessionResult> {
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -47,21 +53,49 @@ export async function updateSession(request: NextRequest) {
 
   const user = data?.claims;
 
+  console.log("user =>", user)
+
+  const publicAuthPages = [
+    routerConfig.auth.SignIn,
+    routerConfig.auth.SignUp,
+    routerConfig.auth.VerifyEmail,
+    routerConfig.auth.ForgotPassword,
+    routerConfig.auth.NewPassword,
+    routerConfig.onboarding,
+  ];
+
+  const authenticatedRedirectPages = [
+    routerConfig.auth.SignIn,
+    routerConfig.auth.SignUp,
+    routerConfig.auth.ForgotPassword,
+  ];
+
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith("/auth/sign-in") &&
-    !request.nextUrl.pathname.startsWith("/auth/sign-up") &&
-    !request.nextUrl.pathname.startsWith("/auth/verify-email")
+    !publicAuthPages.includes(request.nextUrl.pathname)
   ) {
-    // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     if (!request.nextUrl.pathname.startsWith("/auth/sign-up")) {
-      url.pathname = "/auth/sign-in"  ;
+      url.pathname = routerConfig.auth.SignIn;
     } else {
-      url.pathname = "/auth/sign-up";
+      url.pathname = routerConfig.auth.SignUp;
     }
-    return NextResponse.redirect(url);
+    return {
+      response: NextResponse.redirect(url),
+    };
   }
 
-  return supabaseResponse;
+  if (user && authenticatedRedirectPages.includes(request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = routerConfig.app.Dashboard;
+    return {
+      response: NextResponse.redirect(url),
+      userId: user.sub,
+    };
+  }
+
+  return {
+    response: supabaseResponse,
+    userId: user?.sub,
+  };
 }

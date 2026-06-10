@@ -1,9 +1,10 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from './lib/supabase/proxy'
+import { type NextRequest } from 'next/server';
+import { updateSession } from './lib/supabase/proxy';
+import onboardingProxy from './module/onboarding/middleware/proxy';
 
 export async function proxy(request: NextRequest) {
-  // update user's auth session
-  return await updateSession(request)
+  const { response, userId } = await updateSession(request);
+  return onboardingProxy(request, response, userId);
 }
 
 export const config = {

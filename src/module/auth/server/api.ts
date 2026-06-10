@@ -1,12 +1,17 @@
+import routerConfig from "@/configs/route.config";
 import { publicEnv } from "@/env/public";
 import { createClient } from "@/lib/supabase/server";
+import { AuthError } from "@supabase/supabase-js";
 import { Elysia } from "elysia";
 import z from "zod";
-import { SignInSchema, SignupSchema } from "../schema";
-import { CallbackService } from "../service/callback.service";
+import {
+    NewPasswordSchema,
+    ResetPasswordSchema,
+    SignInSchema,
+    SignupSchema,
+} from "../schema";
 import { AuthService } from "../service/auth.service";
-import { AuthError } from "@supabase/supabase-js";
-import routerConfig from "@/configs/route.config";
+import { CallbackService } from "../service/callback.service";
 
 const auth = new Elysia()
   .get("/", () => "auth")
@@ -37,6 +42,34 @@ const auth = new Elysia()
     },
     {
       body: SignupSchema,
+    },
+  )
+  .post(
+    "/forgot-password",
+    async ({ body }) => {
+      const { email } = body;
+      const supabase = await createClient();
+      const authService = new AuthService(supabase);
+      const response = await authService.resetPassword(email);
+      if (response instanceof AuthError) throw new Error(response.message);
+      return response;
+    },
+    {
+      body: ResetPasswordSchema,
+    },
+  )
+  .post(
+    "/new-password",
+    async ({ body }) => {
+      const { password } = body;
+      const supabase = await createClient();
+      const authService = new AuthService(supabase);
+      const response = await authService.updatePassword(password);
+      if (response instanceof AuthError) throw new Error(response.message);
+      return response;
+    },
+    {
+      body: NewPasswordSchema,
     },
   )
   .post(

@@ -1,6 +1,6 @@
+import routerConfig from "@/configs/route.config";
 import { publicEnv } from "@/env/public";
 import { createClient } from "@/lib/supabase/server";
-import { AuthError } from "@supabase/supabase-js";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -41,6 +41,28 @@ class AuthService {
 
         return data;
     }
+
+    /**
+     * @param email - The email of the user to reset the password for.
+     */
+    async resetPassword(email: string) {
+        const redirectTo = `${publicEnv.NEXT_PUBLIC_APP_URL}/api/auth/callback?next=${encodeURIComponent(routerConfig.auth.NewPassword)}`;
+        const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
+            redirectTo,
+        });
+
+        if (error) return error;
+
+        return data;
+    }
+
+    async updatePassword(password: string) {
+        const { data, error } = await this.supabase.auth.updateUser({ password });
+
+        if (error) return error;
+
+        return data;
+    }
 }
 
-export {AuthService}
+export { AuthService };

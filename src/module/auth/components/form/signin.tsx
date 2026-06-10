@@ -17,17 +17,18 @@ import {
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import appConfig from "@/configs/app.config";
 import routerConfig from "@/configs/route.config";
 import { api } from "@/lib/elysia/eden-client";
 import { cn } from "@/lib/utils";
+import { SignInSchema, type SignInSchemaType } from "@/module/auth/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Google } from "@lobehub/icons";
 import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
-import { SignInSchema, type SignInSchemaType } from "@/module/auth/schema";
 import { toast } from "sonner";
 
 export default function SignInForm() {
@@ -54,9 +55,26 @@ export default function SignInForm() {
     },
   });
 
+  const {mutate, isPending} = useMutation({
+    mutationFn: async (data: SignInSchemaType) => {
+      const response = await api.auth.signin.post({
+        email: data.email,
+        password: data.password,
+      });
+      if (response.error) throw response.error;
+      return response.data;
+    },
+  })
+
   const onSubmit = form.handleSubmit(async (data) => {
-    toast.warning("Coming soon to use email and password to sign in", {
-      description: `We are working on it ${data.email} ${data.password}`,
+    mutate(data, {
+      onSuccess: () => {
+        toast.success("Signed in successfully");
+        router.push(routerConfig.app.Dashboard);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
     });
   });
 
@@ -129,8 +147,8 @@ export default function SignInForm() {
               )}
             />
           </FieldGroup>
-          <Button type="submit" size={"lg"} className="w-full">
-            Sign in to your account
+          <Button type="submit" size={"lg"} className="w-full" disabled={isPending}>
+            {isPending ? <Spinner /> : "Sign in to your account"}
           </Button>
           <div className="relative flex items-center justify-center">
             <hr className="flex-1" />

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, integer, jsonb, pgEnum, pgPolicy, pgTable, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgEnum, pgPolicy, pgTable, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const plan = pgEnum("plan", ['free', 'pro', 'enterprise'])
 
@@ -27,7 +27,6 @@ export const users = pgTable("users", {
 export const onboarding = pgTable("onborading", {
 	id: uuid().default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userId: uuid().references(() => users.id).notNull(),
-	step: integer().notNull().default(1),
 	completed: boolean().notNull().default(false),
 	onboardingJson: jsonb().notNull().default("{}"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
@@ -40,3 +39,17 @@ export const onboarding = pgTable("onborading", {
 	pgPolicy("policy_delete_onboarding", { as: "permissive", for: "delete", to: ["public"] }),
 ]);
 
+export const onboardingSteps = pgTable("onboarding_steps", {
+	id: uuid().default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	description: varchar({ length: 255 }).notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	json: jsonb().default("{}"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
+}, (table) => [
+	uniqueIndex("idx_title").using("btree", table.title.asc().nullsLast()),
+	pgPolicy("policy_select_onboarding_steps", { as: "permissive", for: "select", to: ["public"] }),
+	pgPolicy("policy_insert_onboarding_steps", { as: "permissive", for: "insert", to: ["public"] }),
+	pgPolicy("policy_update_onboarding_steps", { as: "permissive", for: "update", to: ["public"] }),
+	pgPolicy("policy_delete_onboarding_steps", { as: "permissive", for: "delete", to: ["public"] }),
+])
