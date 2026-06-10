@@ -18,7 +18,6 @@ export const generate = new Elysia({ prefix: "/llm" })
         prompt: prompt, // -> Prompt is Required because it is the input for the agent
         system: system,
       });
-      console.log("result", result.text);
       return result.text;
     },
     {

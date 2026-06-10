@@ -85,7 +85,6 @@ export default function SignInForm() {
   const onSubmit = form.handleSubmit(async (data) => {
     mutate(data, {
       onSuccess: ({ user }) => {
-        console.log(data);
         if (user?.id) {
           router.push(`${routerConfig.auth.VerifyEmail}?userId=${user.id}`);
         }

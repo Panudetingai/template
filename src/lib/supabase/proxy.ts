@@ -53,8 +53,6 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
 
   const user = data?.claims;
 
-  console.log("user =>", user)
-
   const publicAuthPages = [
     routerConfig.auth.SignIn,
     routerConfig.auth.SignUp,

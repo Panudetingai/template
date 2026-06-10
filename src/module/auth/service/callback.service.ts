@@ -122,8 +122,6 @@ export class CallbackService {
       avatarUrl: user.user_metadata?.avatar_url ?? null,
     };
 
-    console.log("user code data supabase", user);
-
     try {
       await db
         .insert(users)

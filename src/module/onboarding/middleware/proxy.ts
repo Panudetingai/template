@@ -2,12 +2,11 @@ import routerConfig from "@/configs/route.config";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
-  getCachedOnboardingStatus,
-  needsOnboarding,
+    getCachedOnboardingStatus,
+    needsOnboarding,
 } from "./onboarding-status";
 
 const onboardingExemptPaths = new Set([
-  routerConfig.onboarding,
   routerConfig.auth.SignIn,
   routerConfig.auth.SignUp,
   routerConfig.auth.VerifyEmail,
@@ -28,9 +27,24 @@ export default async function onboardingProxy(
   if (onboardingExemptPaths.has(pathname)) return response;
 
   const status = await getCachedOnboardingStatus(userId);
-  if (!needsOnboarding(status)) return response;
+  const isOnboardingPage = pathname === routerConfig.onboarding;
 
-  const url = request.nextUrl.clone();
-  url.pathname = routerConfig.onboarding;
-  return NextResponse.redirect(url);
+  if (needsOnboarding(status)) {
+    // Not finished yet — keep them in the onboarding flow (avoid a redirect
+    // loop when they're already on the onboarding page).
+    if (isOnboardingPage) return response;
+
+    const url = request.nextUrl.clone();
+    url.pathname = routerConfig.onboarding;
+    return NextResponse.redirect(url);
+  }
+
+  // Onboarding is complete — never let them sit on the onboarding page.
+  if (isOnboardingPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = routerConfig.app.Dashboard;
+    return NextResponse.redirect(url);
+  }
+
+  return response;
 }

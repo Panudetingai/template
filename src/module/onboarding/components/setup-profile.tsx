@@ -2,179 +2,126 @@
 
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import routerConfig from "@/configs/route.config";
-import { api } from "@/lib/elysia/eden-client";
-import { getUser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import {
-    SetupProfileSchema,
-    type SetupProfileSchemaType,
-} from "@/module/onboarding/schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { User } from "@supabase/supabase-js";
-import { useMutation } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
-import { toast } from "sonner";
+import { Controller, useWatch } from "react-hook-form";
 import UploadAvatar from "../hooks/upload-avatar";
+import StepHeader from "./steps/step-header";
+import type { StepComponentProps } from "./steps/types";
 
-interface SetupProfileProps {
-  onComplete?: () => void;
-}
-
-export default function SetupProfile({ onComplete }: SetupProfileProps) {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
-
-  const form = useForm<SetupProfileSchemaType>({
-    resolver: zodResolver(SetupProfileSchema),
-    defaultValues: {
-      username: "",
-      avatarUrl: "",
-    },
-  });
-
+export default function SetupProfile({
+  user,
+  content,
+  form,
+  onNext,
+  onBack,
+}: StepComponentProps) {
   const [username, avatarUrl] = useWatch({
     control: form.control,
     name: ["username", "avatarUrl"],
   });
 
-  useEffect(() => {
-    void getUser().then((currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        form.reset({
-          username:
-            currentUser.user_metadata?.username ??
-            currentUser.user_metadata?.name ??
-            "",
-          avatarUrl: currentUser.user_metadata?.avatar_url ?? "",
-        });
-      }
-      setIsLoadingUser(false);
-    });
-  }, [form]);
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (data: SetupProfileSchemaType) => {
-      const response = await api.onboarding["setup-profile"].post({
-        username: data.username,
-        avatarUrl: data.avatarUrl || undefined,
-      });
-
-      if (response.error) throw response.error;
-
-      return response.data;
-    },
-  });
-
-  const onSubmit = form.handleSubmit((data) => {
-    mutate(data, {
-      onSuccess: () => {
-        toast.success("Profile saved", {
-          description: "Your profile has been set up successfully.",
-        });
-        onComplete?.();
-        router.push(routerConfig.app.Dashboard);
-      },
-      onError: (error) => {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to save profile. Please try again.";
-        toast.error(message);
-      },
-    });
-  });
-
-  if (isLoadingUser) {
-    return <Spinner />;
-  }
-
-  if (!user) return null;
-
   const displayName = username || user.email?.split("@")[0] || "User";
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <Card className="max-w-sm w-md">
-        <CardHeader className="items-center text-center">
-          <CardTitle className="text-lg">Set up your profile</CardTitle>
-          <CardDescription className="text-sm">
-            Tell us a bit about yourself to personalize your experience.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-6" onSubmit={onSubmit}>
-            <div className="flex flex-col items-center gap-3">
-            <UploadAvatar initials={initials} />
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-            </div>
+    <div className="space-y-8">
+      <StepHeader
+        title="Set up your profile"
+        description="Tell us a bit about yourself to personalize your experience."
+      />
 
-            <FieldGroup>
-              <Controller
-                control={form.control}
-                name="username"
-                render={({ field, fieldState }) => (
-                  <Field>
-                    <FieldLabel>Username</FieldLabel>
-                    <FieldContent>
-                      <Input
-                        {...field}
-                        placeholder="johndoe"
-                        autoComplete="username"
-                        className={cn(
-                          fieldState.error &&
-                            "border-destructive ring-destructive",
-                        )}
-                      />
-                    </FieldContent>
-                    <FieldDescription>
-                      Letters, numbers, and underscores only.
-                    </FieldDescription>
-                    {fieldState.error && (
-                      <FieldError>{fieldState.error.message}</FieldError>
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 240, damping: 18 }}
+          >
+            <UploadAvatar
+              initials={initials}
+              userId={user.id}
+              value={avatarUrl || undefined}
+              onChange={(url) =>
+                form.setValue("avatarUrl", url, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }
+            />
+          </motion.div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{displayName}</p>
+            <p className="truncate text-sm text-muted-foreground">
+              {user.email}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Click the avatar to upload a photo.
+            </p>
+          </div>
+        </div>
+
+        <FieldGroup>
+          <Controller
+            control={form.control}
+            name="username"
+            render={({ field, fieldState }) => (
+              <Field>
+                <FieldLabel>Username</FieldLabel>
+                <FieldContent>
+                  <Input
+                    {...field}
+                    placeholder="johndoe"
+                    autoComplete="username"
+                    autoFocus
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void onNext();
+                      }
+                    }}
+                    className={cn(
+                      fieldState.error &&
+                        "border-destructive ring-destructive",
                     )}
-                  </Field>
+                  />
+                </FieldContent>
+                <FieldDescription>
+                  Letters, numbers, and underscores only.
+                </FieldDescription>
+                {fieldState.error && (
+                  <FieldError>{fieldState.error.message}</FieldError>
                 )}
-              />
-            </FieldGroup>
+              </Field>
+            )}
+          />
+        </FieldGroup>
+      </div>
 
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full"
-              disabled={isPending}
-            >
-              {isPending ? <Spinner /> : "Continue"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </motion.div>
+      <div className="flex gap-3">
+        <Button type="button" variant="outline" size="lg" onClick={onBack}>
+          <ArrowLeft />
+          Back
+        </Button>
+        <Button
+          type="button"
+          size="lg"
+          className="flex-1"
+          onClick={() => void onNext()}
+        >
+          {content.cta}
+          <ArrowRight />
+        </Button>
+      </div>
+    </div>
   );
 }

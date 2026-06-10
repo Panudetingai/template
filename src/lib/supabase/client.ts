@@ -1,4 +1,4 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserClient } from '@supabase/ssr';
 
 import { publicEnv } from "@/env/public";
 
@@ -19,6 +19,7 @@ export function createClient() {
 export async function getUser() {
   const supabase = createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
+  if (error) throw new Error(error.message)
   return user
 }
 

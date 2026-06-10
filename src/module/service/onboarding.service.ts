@@ -1,14 +1,64 @@
 import { db } from "@/lib/drizzle";
 import { redis } from "@/lib/redis";
 import { getUser } from "@/lib/supabase/server";
+import type { OnboardingStepContent } from "@/module/onboarding/data/onboarding-steps";
+import type { OnboardingSchemaType } from "@/module/onboarding/schema";
 import { eq } from "drizzle-orm";
-import { onboarding, users } from "../../../drizzle/schema";
-import type { SetupProfileSchemaType } from "@/module/onboarding/schema";
+import { onboarding, onboardingSteps, users } from "../../../drizzle/schema";
 
-type Onboarding = typeof onboarding.$inferSelect;
+export type Onboarding = typeof onboarding.$inferSelect;
+
+export type OnboardingSnapshot = Pick<
+  Onboarding,
+  "id" | "userId" | "completed" | "onboardingJson"
+>;
+
+export interface OnboardingStepRecord {
+  id: string;
+  title: string;
+  description: string;
+  content: OnboardingStepContent;
+}
+
+const ONBOARDING_STEPS_CACHE_KEY = "onboarding:steps";
 
 class OnboardingService {
-  async getUserOnboarding() {
+  /**
+   * Returns the onboarding step definitions seeded into `onboarding_steps`,
+   * ordered by their `content.order`. Cached in Redis since the content rarely
+   * changes between deploys.
+   */
+  async getSteps(): Promise<OnboardingStepRecord[]> {
+    const cached = await redis.get(ONBOARDING_STEPS_CACHE_KEY);
+    if (cached) {
+      return typeof cached === "string"
+        ? (JSON.parse(cached) as OnboardingStepRecord[])
+        : (cached as OnboardingStepRecord[]);
+    }
+
+    const rows = await db
+      .select({
+        id: onboardingSteps.id,
+        title: onboardingSteps.title,
+        description: onboardingSteps.description,
+        json: onboardingSteps.json,
+      })
+      .from(onboardingSteps);
+
+    const steps: OnboardingStepRecord[] = rows
+      .map((row) => ({
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        content: row.json as OnboardingStepContent,
+      }))
+      .sort((a, b) => (a.content?.order ?? 0) - (b.content?.order ?? 0));
+
+    await redis.set(ONBOARDING_STEPS_CACHE_KEY, JSON.stringify(steps));
+    return steps;
+  }
+
+  async getUserOnboarding(): Promise<OnboardingSnapshot | null> {
     const user = await getUser();
     if (!user) return null;
 
@@ -40,25 +90,42 @@ class OnboardingService {
     return onboardingData;
   }
 
-  async setupProfile(data: SetupProfileSchemaType) {
+  async completeOnboarding(data: OnboardingSchemaType) {
     const user = await getUser();
     if (!user) return null;
 
     const now = new Date().toISOString();
     const avatarUrl = data.avatarUrl?.trim() || null;
 
+    // Ensure a public.users row exists before the onboarding FK references it.
+    // The auth user may not have been mirrored here yet (e.g. the signup
+    // webhook didn't run), so upsert instead of a plain update.
     await db
-      .update(users)
-      .set({
+      .insert(users)
+      .values({
+        id: user.id,
+        email: user.email ?? "",
         username: data.username,
         avatarUrl,
         updatedAt: now,
       })
-      .where(eq(users.id, user.id));
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          username: data.username,
+          avatarUrl,
+          updatedAt: now,
+        },
+      });
 
     const profilePayload = {
       username: data.username,
       avatarUrl,
+      preferences: {
+        role: data.role,
+        goal: data.goal,
+        teamSize: data.teamSize,
+      },
       completedAt: now,
     };
 

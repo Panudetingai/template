@@ -36,7 +36,6 @@ export function useAuthOnChangeEmailVerification(isPending: boolean, setIsPendin
     const supabase = createClient();
 
     void supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("[auth] initial session", session?.user?.email_confirmed_at ?? null);
       redirectIfVerified(session, router, setIsPending);
     });
 

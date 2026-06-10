@@ -1,12 +1,12 @@
 "use client";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/animate-ui/components/radix/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // import { useGetUserClient } from "@/lib/getuser";
@@ -18,9 +18,9 @@ import { useMutation } from "@tanstack/react-query";
 import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
-  SidebarFooter,
-  SidebarMenuButton,
-  SidebarMenuItem,
+    SidebarFooter,
+    SidebarMenuButton,
+    SidebarMenuItem,
 } from "../../animate-ui/components/radix/sidebar";
 
 const menuItems = [
@@ -49,7 +49,17 @@ const menuItems = [
 export default function SidebarFooterComponent() {
   const isMobile = useIsMobile();
   const router = useRouter();
-  const { user_metadata, isLoading } = useUsers();
+
+  const { user, user_metadata } = useUsers();
+
+  const displayName =
+    user_metadata?.name ??
+    user_metadata?.full_name ??
+    user?.email?.split("@")[0] ??
+    "";
+  const displayEmail = user_metadata?.email ?? user?.email ?? "";
+  const avatarUrl =
+    user_metadata?.avatar_url ?? user_metadata?.picture ?? "";
 
   const { mutate: handleLogout, isPending } = useMutation({
     mutationFn: async () => {
@@ -61,6 +71,7 @@ export default function SidebarFooterComponent() {
       router.refresh();
     },
   });
+
   return (
     <SidebarFooter>
       <SidebarMenuItem>
@@ -71,19 +82,14 @@ export default function SidebarFooterComponent() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="size-8">
-                <AvatarImage
-                  src={user_metadata?.avatar_url ?? ""}
-                  alt={user_metadata?.name ?? ""}
-                />
+                <AvatarImage src={avatarUrl} alt={displayName} />
                 <AvatarFallback>
-                  {user_metadata?.name?.charAt(0) ?? ""}
+                  {displayName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="font-medium">{user_metadata?.name ?? ""}</span>
-                <span className="text-muted-foreground">
-                  {user_metadata?.email ?? ""}
-                </span>
+                <span className="font-medium">{displayName}</span>
+                <span className="text-muted-foreground">{displayEmail}</span>
               </div>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -96,19 +102,14 @@ export default function SidebarFooterComponent() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage
-                    src={user_metadata?.avatar_url ?? ""}
-                    alt={user_metadata?.name ?? ""}
-                  />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarImage src={avatarUrl} alt={displayName} />
+                  <AvatarFallback className="rounded-lg">
+                    {displayName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">
-                    {user_metadata?.name ?? ""}
-                  </span>
-                  <span className="truncate text-xs">
-                    {user_metadata?.email ?? ""}
-                  </span>
+                  <span className="truncate font-semibold">{displayName}</span>
+                  <span className="truncate text-xs">{displayEmail}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
