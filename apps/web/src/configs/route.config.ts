@@ -1,0 +1,47 @@
+import z from "zod";
+
+const routerConfigSchema = z.object({
+    auth: z.object({
+        SignIn: z.string().min(1),
+        SignUp: z.string().min(1),
+        ForgotPassword: z.string().min(1),
+        NewPassword: z.string().min(1),
+        VerifyEmail: z.string().min(1),
+        VerifyPhone: z.string().min(1),
+        Callback: z.string().min(1),
+    }),
+    app: z.object({
+        Dashboard: z.string().min(1),
+        Profile: z.string().min(1),
+        Notifications: z.string().min(1),
+        Settings: z.string().min(1),
+        onboarding: z.string().min(1)
+    }),
+    onboarding: z.string().min(1),
+    error: z.string().min(1),
+    notFound: z.string().min(1),
+});
+
+const routerConfig = routerConfigSchema.parse({
+    auth: {
+        SignIn: "/auth/sign-in",
+        SignUp: "/auth/sign-up",
+        ForgotPassword: "/auth/forgot-password",
+        NewPassword: "/auth/new-password",
+        VerifyEmail: "/auth/verify-email",
+        VerifyPhone: "/verify-phone",
+        Callback: "/auth/callback",
+    },
+    app: {
+        Dashboard: "/dashboard",
+        Profile: "/profile",
+        Notifications: "/notifications",
+        Settings: "/settings",
+        onboarding: "/onboarding",
+    },
+    onboarding: "/onboarding",
+    error: "/error",
+    notFound: "/not-found",
+} satisfies z.infer<typeof routerConfigSchema>);
+
+export default routerConfig;

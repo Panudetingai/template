@@ -1,75 +1,66 @@
-# template — เทมเพลตเว็บแอป (Next.js)
+# Template — Next.js + Elysia API (monorepo)
 
-โปรเจกต์นี้เป็นเว็บแอปที่สร้างด้วย **Next.js** มีหน้าเข้าสู่ระบบ แถบเมนูด้านข้าง และเชื่อมต่อ **Supabase** (ฐานข้อมูล / auth) รวมถึงใช้ **Groq** สำหรับฟีเจอร์ AI
+เทมเพลตสำหรับเริ่มโปรเจกต์ SaaS ใหม่ แยก **frontend** กับ **backend** ออกจากกันชัดเจน
 
----
+| ส่วน | โฟลเดอร์ | ทำอะไร |
+|------|----------|--------|
+| Web | `apps/web` | Next.js 16 (UI, หน้า auth, onboarding, billing) |
+| API | `apps/api` | Elysia บน Bun — verify token, profile, onboarding, **Stripe**, **AI (Groq)**, ฐานข้อมูล (Drizzle) |
+| Shared | `packages/shared` | zod schemas ที่ใช้ร่วมกัน |
 
-## สิ่งที่ต้องมีก่อนเริ่ม
-
-- **Node.js** (เวอร์ชันที่รองรับ Next.js 16 — ดูที่ [เอกสาร Next.js](https://nextjs.org/docs) ได้)
-- **npm** (หรือใช้ `pnpm` / `yarn` แทนได้ตามที่คุณถนัด)
-
----
-
-## ติดตั้งและรันในเครื่อง
-
-### 1. ติดตั้งแพ็กเกจ
-
-```bash
-npm install && bun install 
+```
+Browser ──(Supabase Auth: sign in/up, OAuth)──▶ Supabase
+   │  access token (Bearer)
+   ▼
+apps/web ──Eden (type-safe)──▶ apps/api ──▶ Postgres (Supabase) / Redis / Stripe / Groq
+                                  ▲
+                    Stripe webhook ┘  POST /webhooks/stripe
 ```
 
-### 2. ตั้งค่าตัวแปรสภาพแวดล้อม
+- **Auth:** ผู้ใช้ login ผ่าน Supabase (อยู่ฝั่ง web) แล้ว API ตรวจ JWT ทุก request (`{ auth: true }`)
+- **Secrets** (DB, Stripe, Groq, service role) อยู่ใน `apps/api/.env` เท่านั้น — web ไม่มี
 
-คัดลอกไฟล์ตัวอย่างแล้วแก้ค่าให้ตรงกับโปรเจกต์ของคุณ:
+## เริ่มต้นใช้งาน
 
-```bash
-cp .env.example .env.local
-```
-
-จากนั้นเปิด `.env.local` แล้วกรอกอย่างน้อย:
-
-| หมวด | คำอธิบายสั้นๆ |
-|------|----------------|
-| **Supabase** | URL, key, และข้อมูลเชื่อมต่อฐานข้อมูล (ตามที่ได้จาก [Supabase Dashboard](https://supabase.com/dashboard)) |
-| **GROQ_API_KEY** | ใช้กับฟีเจอร์ AI — สร้างได้ที่ [Groq Console](https://console.groq.com/) |
-| **NEXT_PUBLIC_*** | ค่าที่เบราว์เซอร์ต้องรู้ (ชื่อแอป, URL ฐาน API ฯลฯ) |
-
-รายละเอียดชื่อตัวแปรทั้งหมดดูได้ใน `.env.example`
-
-### 3. รันโหมดพัฒนา
+ต้องมี [Bun](https://bun.sh) และโปรเจกต์ Supabase
 
 ```bash
-npm run dev && bun run dev
+bun install
+cp apps/web/.env.example apps/web/.env.local
+cp apps/api/.env.example apps/api/.env
+# กรอกค่าในไฟล์ทั้งสอง แล้ว:
+bun run db:migrate
+bun run --filter @template/api db:functions
+bun run db:seed
+bun run dev
 ```
 
-เปิดเบราว์เซอร์ที่ [http://localhost:3000](http://localhost:3000)
+- Web: http://localhost:3000 · API: http://localhost:4000 · API docs: http://localhost:4000/docs
+- Stripe / AI เป็น optional — route จะตอบ `503` จนกว่าจะใส่ key
 
----
+ขั้นตอนละเอียดดูที่ skill `new-project-setup` (`.claude/skills/`)
 
-## คำสั่งที่ใช้บ่อย
+## คำสั่ง (รันที่ root)
 
 | คำสั่ง | ทำอะไร |
 |--------|--------|
-| `npm run dev` | รันเซิร์ฟเวอร์พัฒนา (hot reload) |
-| `npm run build` | สร้าง production build |
-| `npm run start` | รันแอปหลัง build แล้ว |
-| `npm run lint` | ตรวจโค้ดด้วย ESLint |
+| `bun run dev` | รัน web + api พร้อมกัน |
+| `bun run typecheck` | ตรวจ type ทุกแพ็กเกจ |
+| `bun run test` | เทสต์ API (ใส่ `TEST_DATABASE_URL` เพื่อรันเทสต์ที่ใช้ DB) |
+| `bun run db:generate` / `db:migrate` / `db:seed` | จัดการฐานข้อมูล |
+| `bun run build` | build ทั้งหมด |
 
----
+## Skills (สำหรับ Claude Code)
 
-## โครงสร้างโฟลเดอร์หลัก (สั้นๆ)
+| Skill | ใช้เมื่อ |
+|-------|---------|
+| `new-project-setup` | เริ่มโปรเจกต์ใหม่จากเทมเพลต |
+| `add-api-module` | เพิ่ม endpoint/feature ใน backend + เรียกจาก web |
+| `stripe-billing` | ตั้งค่า/ทดสอบ Stripe, gate ฟีเจอร์ตาม plan |
+| `ai-feature` | เพิ่ม AI provider/endpoint/streaming |
+| `db-migration` | แก้ schema, migration, seed |
 
-- `src/app/` — หน้าเว็บและ routing (App Router)
-- `src/components/` — คอมโพเนนต์ UI และ layout
-- `src/lib/` — ช่วยเชื่อม Supabase, Drizzle, Elysia client ฯลฯ
-- `src/module/` — โมดูลเฉพาะ เช่น auth
-- `src/services/` — บริการภายนอก (LLM/Groq ฯลฯ)
+## Deploy
 
----
-
-## เอกสารเพิ่มเติม
-
-- [Next.js Documentation](https://nextjs.org/docs)
-
-หมายเหตุ: เวอร์ชัน Next.js ในโปรเจกต์นี้อาจมี API หรือโครงสร้างไฟล์ต่างจากที่คุ้น — ถ้าจะแก้ routing หรือ server components ควรดูเอกสารใน `node_modules/next/dist/docs/` ตามที่โปรเจกต์แนะนำ
+- **Web:** Vercel (root directory `apps/web`) — ตั้ง `NEXT_PUBLIC_*` ให้ครบ โดย `NEXT_PUBLIC_API_URL` ชี้ไป API
+- **API:** ที่ไหนก็ได้ที่รัน Bun/Docker ได้ (Railway, Fly.io, Render) — `bun run --filter @template/api start`; ตั้ง `WEB_URL` ให้ตรงกับโดเมน web (ใช้กับ CORS และ Stripe redirect)
