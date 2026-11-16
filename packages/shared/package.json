@@ -1,0 +1,23 @@
+{
+  "name": "@template/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./auth": "./src/auth.ts",
+    "./onboarding": "./src/onboarding.ts",
+    "./onboarding-steps": "./src/onboarding-steps.ts",
+    "./profile": "./src/profile.ts",
+    "./billing": "./src/billing.ts",
+    "./ai": "./src/ai.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

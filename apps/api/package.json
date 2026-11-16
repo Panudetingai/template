@@ -1,0 +1,44 @@
+{
+  "name": "@template/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/app.ts"
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --target=bun --outdir=dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "bun test",
+    "db:check": "bun run scripts/check-db-connection.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:pull": "bun run db:check && drizzle-kit pull",
+    "db:seed": "bun run scripts/seed-onboarding-steps.ts",
+    "db:functions": "bun run scripts/apply-db-functions.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/groq": "^3.0.31",
+    "@elysiajs/cors": "^1",
+    "@elysiajs/swagger": "^1.3.1",
+    "@supabase/supabase-js": "^2.99.3",
+    "@template/shared": "workspace:*",
+    "@upstash/redis": "^1.38.0",
+    "ai": "^6.0.134",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.1",
+    "elysia": "^1",
+    "pg": "^8.20.0",
+    "stripe": "^18",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.11",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^5.9.3"
+  }
+}
